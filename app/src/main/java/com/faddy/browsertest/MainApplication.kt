@@ -1,6 +1,7 @@
 package com.faddy.browsertest
 
 import android.app.Application
+import dagger.hilt.android.HiltAndroidApp
 
-class MainApplication : Application() {
-}
+@HiltAndroidApp
+class MainApplication: Application ()

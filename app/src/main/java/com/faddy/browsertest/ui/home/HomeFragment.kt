@@ -14,9 +14,10 @@ import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import com.faddy.browsertest.databinding.FragmentHomeBinding
 import com.faddy.browsertest.utils.hideKeyboard
+import dagger.hilt.android.AndroidEntryPoint
 
-
-public class HomeFragment : Fragment() {
+@AndroidEntryPoint
+class HomeFragment : Fragment() {
 
     private lateinit var binding: FragmentHomeBinding
     private var historyAdapter = HistoryAdapter()
@@ -70,7 +71,9 @@ public class HomeFragment : Fragment() {
 
     private fun initListeners() {
         binding.searchET.setOnFocusChangeListener { _, isSelected ->
-            if (isSelected) { visibilityUnitController(true) }
+            if (isSelected) {
+                visibilityUnitController(true)
+            }
         }
         binding.searchET.addTextChangedListener { _ ->
             val tempString = binding.searchET.text.toString().trim()
@@ -82,7 +85,7 @@ public class HomeFragment : Fragment() {
         }
     }
 
-    private fun visibilityUnitController(firstView:Boolean =  false) {
+    private fun visibilityUnitController(firstView: Boolean = false) {
         if (isWebViewInflated() || firstView) { //webview inflated so UI... searchbar should be at middle
             binding.guidelineInner.setGuidelinePercent(0.0f)
             showHistoryAndHideRecent(true)
@@ -181,7 +184,9 @@ public class HomeFragment : Fragment() {
         }
     }
 
-    private fun isWebViewInflated(): Boolean { return binding.theMainWebView.height > 0 }
+    private fun isWebViewInflated(): Boolean {
+        return binding.theMainWebView.height > 0
+    }
 
     private fun showHistoryAndHideRecent(flag: Boolean) {
         if (flag) {
