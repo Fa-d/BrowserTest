@@ -53,7 +53,11 @@ public class HomeFragment : Fragment() {
         "What do you call that in English?"
     )
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View = FragmentHomeBinding.inflate(inflater, container, false).also { binding = it }.root
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View = FragmentHomeBinding.inflate(inflater, container, false).also { binding = it }.root
 
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -61,39 +65,13 @@ public class HomeFragment : Fragment() {
         initView()
         initClickListener()
         initListeners()
-
+        initData()
     }
 
     private fun initListeners() {
-        binding.searchET.setOnFocusChangeListener { _, b ->
-            if (b) {
-                binding.guidelineInner.setGuidelinePercent(0.0f)
-                binding.cancelSearchButton.visibility = View.VISIBLE
-                binding.historyRecycler.visibility = View.GONE
-                binding.searchbarRecycler.visibility = View.VISIBLE
-                binding.serachLT.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                    endToStart = binding.guideline80.id
-                    startToEnd = binding.guideline1.id
-                }
-               binding.serachLT.layoutParams.width = 0
-            } else {
-                if (binding.theMainWebView.height > 0) {
-                } else {
-                    binding.guidelineInner.setGuidelinePercent(0.40f)
-                }
-                binding.historyRecycler.visibility = View.VISIBLE
-                binding.cancelSearchButton.visibility = View.GONE
-                binding.searchbarRecycler.visibility = View.GONE
-                binding.serachLT.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                    endToEnd = binding.root.id
-                    startToStart = binding.root.id
-                    endToStart = ConstraintLayout.LayoutParams.UNSET
-                    startToEnd = ConstraintLayout.LayoutParams.UNSET
-                }
-                binding.serachLT.layoutParams.width = ConstraintLayout.LayoutParams.MATCH_PARENT
-            }
+        binding.searchET.setOnFocusChangeListener { _, isSelected ->
+            if (isSelected) { visibilityUnitController(true) }
         }
-
         binding.searchET.addTextChangedListener { _ ->
             val tempString = binding.searchET.text.toString().trim()
             if (tempString == "") binding.searchbarRecycler.visibility =
@@ -102,9 +80,43 @@ public class HomeFragment : Fragment() {
                 historyTempTextList.filter { listText -> listText.contains(tempString) }
             historyTextAdapter.initLoad(theFilteredResult)
         }
-
-        binding.searchProgress.progress = binding.theMainWebView.progress
     }
+
+    private fun visibilityUnitController(firstView:Boolean =  false) {
+        if (isWebViewInflated() || firstView) { //webview inflated so UI... searchbar should be at middle
+            binding.guidelineInner.setGuidelinePercent(0.0f)
+            showHistoryAndHideRecent(true)
+            updateLayoutParamsOfSearchbar("min")
+
+        } else { //visible webview so
+            binding.guidelineInner.setGuidelinePercent(0.40f)
+            showHistoryAndHideRecent(false)
+            updateLayoutParamsOfSearchbar("max")
+        }
+    }
+
+    private fun updateLayoutParamsOfSearchbar(flag: String) {
+        if (flag == "min") {
+            binding.serachLT.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                endToStart = binding.guideline80.id
+                startToEnd = binding.guideline1.id
+                endToEnd = ConstraintLayout.LayoutParams.UNSET
+                startToStart = ConstraintLayout.LayoutParams.UNSET
+                topMargin = 10
+                width = 0
+            }
+        } else if (flag == "max") {
+            binding.serachLT.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                endToStart = ConstraintLayout.LayoutParams.UNSET
+                startToEnd = ConstraintLayout.LayoutParams.UNSET
+                endToEnd = binding.root.id
+                startToStart = binding.root.id
+                topMargin = 0
+                width = ConstraintLayout.LayoutParams.MATCH_PARENT
+            }
+        }
+    }
+
 
     private fun initClickListener() {
         binding.cancelSearchButton.setOnClickListener {
@@ -114,26 +126,7 @@ public class HomeFragment : Fragment() {
             binding.searchbarRecycler.visibility = View.GONE
             binding.cancelSearchButton.visibility = View.GONE
             hideKeyboard()
-            binding.guidelineInner.setGuidelinePercent(0.40f)
-            binding.serachLT.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                endToStart = binding.guideline80.id
-                startToEnd = binding.guideline1.id
-            }
-            /*if (binding.theMainWebView.height > 0) {
-                binding.serachLT.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                    endToEnd = binding.root.id
-                    startToStart = binding.root.id
-                    endToStart = ConstraintLayout.LayoutParams.UNSET
-                }
-                binding.serachLT.layoutParams.width = ConstraintLayout.LayoutParams.MATCH_PARENT
-            } else {
-                binding.guidelineInner.setGuidelinePercent(0.40f)
-                binding.serachLT.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                    endToStart = binding.guideline80.id
-                    startToEnd = binding.guideline1.id
-                }
-
-            }*/
+            visibilityUnitController()
         }
         binding.searchET.setOnEditorActionListener(OnEditorActionListener { v, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_GO) {
@@ -141,29 +134,23 @@ public class HomeFragment : Fragment() {
                 binding.theMainWebView.webChromeClient = WebChromeClient()
                 binding.theMainWebView.settings.javaScriptEnabled = true
                 binding.theMainWebView.settings.domStorageEnabled = true
-                binding.theMainWebView.loadUrl("https://www.google.com/search?q=${binding.searchET.text.trim().toString().replace(" ", "+")}")
+                binding.theMainWebView.loadUrl(
+                    "https://www.google.com/search?q=${
+                        binding.searchET.text.trim().toString().replace(" ", "+")
+                    }"
+                )
                 binding.theMainWebView.visibility = View.VISIBLE
                 hideKeyboard()
-                binding.searchET.setText("https://www.google.com/search?q=${binding.searchET.text.trim().toString().replace(" ", "+")}")
+                visibilityUnitController(true)
+                binding.searchET.setText(binding.theMainWebView.url)
+                binding.searchET.clearFocus()
                 return@OnEditorActionListener true
             }
             false
         })
-
-
     }
 
     private fun initData() {
-        //binding.theMainWebView.webViewClient = TheWClient()
-        /* binding.theMainWebView.webViewClient = object : WebViewClient() {
-             override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
-                 // do your handling codes here, which url is the requested url
-                 // probably you need to open that url rather than redirect
-                 return true // then it is not handled by default action
-             }
-         }.also {
-             binding.theMainWebView.webViewClient = it
-         }*/
         historyAdapter.initLoad(
             listOf<String>(
                 "a",
@@ -178,7 +165,6 @@ public class HomeFragment : Fragment() {
                 "j",
                 "k"
             )
-
         )
     }
 
@@ -193,7 +179,19 @@ public class HomeFragment : Fragment() {
             layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
             adapter = historyTextAdapter
         }
-        initData()
-        binding.theMainWebView
+    }
+
+    private fun isWebViewInflated(): Boolean { return binding.theMainWebView.height > 0 }
+
+    private fun showHistoryAndHideRecent(flag: Boolean) {
+        if (flag) {
+            binding.historyRecycler.visibility = View.GONE
+            binding.searchbarRecycler.visibility = View.VISIBLE
+            binding.cancelSearchButton.visibility = View.VISIBLE
+        } else {
+            binding.historyRecycler.visibility = View.VISIBLE
+            binding.searchbarRecycler.visibility = View.GONE
+            binding.cancelSearchButton.visibility = View.GONE
+        }
     }
 }
