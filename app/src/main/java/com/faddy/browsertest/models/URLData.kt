@@ -10,9 +10,18 @@ import kotlinx.android.parcel.Parcelize
 @Entity(tableName = "url_table")
 @Parcelize
 data class URLData(
-    @PrimaryKey(autoGenerate = true)
-    @ColumnInfo(name = "uid")
-    var uid: Int = 0,
-    @ColumnInfo(name = "packageName")
-    var packageName: String? = ""
-): Parcelable
+/*    @ColumnInfo(name = "uid")
+    var uid: Int = 0,   */
+    @PrimaryKey(autoGenerate = false)
+    @ColumnInfo(name = "generatedURL")
+    var generatedURL: String = "",
+
+    @ColumnInfo(name = "title")
+    var title: String = "",
+
+    @ColumnInfo(name = "hitTimeStamp")
+    var hitTimeStamp: Long = 0,
+
+    @ColumnInfo(name = "hitCount")
+    var hitCount: Int = 0,
+) : Parcelable

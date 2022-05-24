@@ -1,24 +1,35 @@
 package com.faddy.browsertest.ui.home;
 
+import android.content.ComponentName
+import android.content.Intent
+import android.content.ServiceConnection
 import android.os.Bundle
+import android.os.IBinder
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
-import android.webkit.WebChromeClient
-import android.webkit.WebViewClient
 import android.widget.TextView.OnEditorActionListener
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.updateLayoutParams
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Observer
 import com.faddy.browsertest.databinding.FragmentHomeBinding
+import com.faddy.browsertest.models.URLData
 import com.faddy.browsertest.utils.hideKeyboard
+import com.faddy.browsertest.webViewClient.GenericWebViewClient
 import dagger.hilt.android.AndroidEntryPoint
+import org.torproject.jni.TorService
+import java.util.*
 
 @AndroidEntryPoint
 class HomeFragment : Fragment() {
-
+    private val viewModel: HomeViewModel by viewModels()
     private lateinit var binding: FragmentHomeBinding
     private var historyAdapter = HistoryAdapter()
     private var historyTextAdapter = HistoryTextAdapter()
@@ -54,6 +65,11 @@ class HomeFragment : Fragment() {
         "What do you call that in English?"
     )
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        initService()
+        super.onCreate(savedInstanceState)
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -67,6 +83,35 @@ class HomeFragment : Fragment() {
         initClickListener()
         initListeners()
         initData()
+    }
+
+    private fun initService() {
+        activity?.bindService(
+            Intent(requireContext(), TorService::class.java),
+            object : ServiceConnection {
+                override fun onServiceConnected(name: ComponentName, service: IBinder) {
+                    val torService = (service as TorService.LocalBinder).service
+                    var conn = torService.torControlConnection
+                    while ((conn == torService.torControlConnection) == null) {
+                        try {
+                            Thread.sleep(500)
+                        } catch (e: InterruptedException) {
+                            e.printStackTrace()
+                        }
+                    }
+                    if (conn != null) {
+                        Toast.makeText(
+                            requireContext(),
+                            "Got Tor control connection",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+
+                override fun onServiceDisconnected(name: ComponentName) {}
+            },
+            AppCompatActivity.BIND_AUTO_CREATE
+        )
     }
 
     private fun initListeners() {
@@ -133,15 +178,55 @@ class HomeFragment : Fragment() {
         }
         binding.searchET.setOnEditorActionListener(OnEditorActionListener { v, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_GO) {
-                binding.theMainWebView.webViewClient = WebViewClient()
-                binding.theMainWebView.webChromeClient = WebChromeClient()
+                //   binding.theMainWebView.webChromeClient = WebChromeClient()
                 binding.theMainWebView.settings.javaScriptEnabled = true
                 binding.theMainWebView.settings.domStorageEnabled = true
-                binding.theMainWebView.loadUrl(
-                    "https://www.google.com/search?q=${
+                /*binding.theMainWebView.loadUrl(
+                    "https://www.duckduckgo.com/?q=${
                         binding.searchET.text.trim().toString().replace(" ", "+")
                     }"
-                )
+                )*/
+                binding.theMainWebView.loadUrl("https://check.torproject.org")
+                viewModel.checkIfDataAlreadyExists(binding.theMainWebView.url ?: "")
+                    .observe(viewLifecycleOwner, Observer { isTrue ->
+                        if (isTrue) {
+                            viewModel.getHitCountSingleSite(binding.theMainWebView.url ?: "")
+                                .observe(viewLifecycleOwner, Observer { isFetchedCount ->
+                                    if (isFetchedCount > 0) {
+                                        viewModel.incrementHitCount(
+                                            isFetchedCount + 1,
+                                            binding.theMainWebView.url ?: ""
+                                        ).observe(viewLifecycleOwner, Observer {
+                                            if (it) {
+                                                Log.d(
+                                                    "TheTad",
+                                                    "Suggessfull inserted new URL Into Database"
+                                                )
+                                            }
+                                        })
+                                    } else {
+                                        viewModel.insertUrlIntoTable(
+                                            URLData(
+                                                generatedURL = binding.theMainWebView.url ?: "",
+                                                title = binding.searchET.text.toString(),
+                                                hitTimeStamp = Calendar.getInstance().timeInMillis,
+                                                hitCount = 1
+                                            )
+                                        )
+                                    }
+                                })
+
+                        } else {
+                            viewModel.insertUrlIntoTable(
+                                URLData(
+                                    generatedURL = binding.theMainWebView.url ?: "",
+                                    title = binding.searchET.text.toString(),
+                                    hitTimeStamp = Calendar.getInstance().timeInMillis,
+                                    hitCount = 1
+                                )
+                            )
+                        }
+                    })
                 binding.theMainWebView.visibility = View.VISIBLE
                 hideKeyboard()
                 visibilityUnitController(true)
@@ -172,6 +257,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun initView() {
+        binding.theMainWebView.webViewClient = GenericWebViewClient()
         with(binding.historyRecycler) {
             setHasFixedSize(true)
             layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 3)
