@@ -6,9 +6,7 @@ import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView.OnEditorActionListener
 import android.widget.Toast
@@ -21,11 +19,12 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import com.faddy.browsertest.databinding.FragmentHomeBinding
 import com.faddy.browsertest.models.URLData
-import com.faddy.browsertest.utils.hideKeyboard
+import com.faddy.browsertest.utils.*
 import com.faddy.browsertest.webViewClient.GenericWebViewClient
 import dagger.hilt.android.AndroidEntryPoint
 import org.torproject.jni.TorService
 import java.util.*
+import java.util.regex.Pattern
 
 @AndroidEntryPoint
 class HomeFragment : Fragment() {
@@ -178,15 +177,17 @@ class HomeFragment : Fragment() {
         }
         binding.searchET.setOnEditorActionListener(OnEditorActionListener { v, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_GO) {
-                //   binding.theMainWebView.webChromeClient = WebChromeClient()
                 binding.theMainWebView.settings.javaScriptEnabled = true
                 binding.theMainWebView.settings.domStorageEnabled = true
-                /*binding.theMainWebView.loadUrl(
-                    "https://www.duckduckgo.com/?q=${
-                        binding.searchET.text.trim().toString().replace(" ", "+")
-                    }"
-                )*/
-                binding.theMainWebView.loadUrl("https://check.torproject.org")
+                if (isURL(binding.searchET.text.trim().toString())) {
+                    binding.theMainWebView.loadUrl(binding.searchET.text.trim().toString())
+                } else {
+                    binding.theMainWebView.loadUrl(
+                        "https://www.google.com/search?q=${
+                            binding.searchET.text.trim().toString().replace(" ", "+")
+                        }"
+                    )
+                }
                 viewModel.checkIfDataAlreadyExists(binding.theMainWebView.url ?: "")
                     .observe(viewLifecycleOwner, Observer { isTrue ->
                         if (isTrue) {
@@ -236,6 +237,12 @@ class HomeFragment : Fragment() {
             }
             false
         })
+        binding.theMainWebView.setOnKeyListener { view, key, keyEvent ->
+            if (key == KeyEvent.KEYCODE_BACK && keyEvent.action == MotionEvent.ACTION_UP && binding.theMainWebView.canGoBack()) {
+                binding.theMainWebView.goBack()
+            }
+            false
+        }
     }
 
     private fun initData() {
@@ -257,7 +264,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun initView() {
-        binding.theMainWebView.webViewClient = GenericWebViewClient()
+        binding.theMainWebView.webViewClient = GenericWebViewClient(binding.theMainWebView)
         with(binding.historyRecycler) {
             setHasFixedSize(true)
             layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 3)
@@ -284,5 +291,31 @@ class HomeFragment : Fragment() {
             binding.searchbarRecycler.visibility = View.GONE
             binding.cancelSearchButton.visibility = View.GONE
         }
+    }
+
+    fun isURL(url: String): Boolean {
+        var url = url
+        url = url.lowercase(Locale.getDefault())
+        if (url.startsWith(URL_ABOUT_BLANK)
+            || url.startsWith(URL_SCHEME_FILE)
+            || url.startsWith(URL_SCHEME_HTTP)
+            || url.startsWith(URL_SCHEME_HTTPS)
+            || url.startsWith(URL_SCHEME_FTP)
+            || url.startsWith(URL_SCHEME_INTENT)
+        ) {
+            return true
+        }
+        val regex = ("^((ftp|http|https|intent)?://)" // support scheme
+                + "?(([0-9a-z_!~*'().&=+$%-]+: )?[0-9a-z_!~*'().&=+$%-]+@)?" // ftp的user@
+                + "(([0-9]{1,3}\\.){3}[0-9]{1,3}" // IP形式的URL -> 199.194.52.184
+                + "|" // 允许IP和DOMAIN（域名）
+                + "([0-9a-z_!~*'()-]+\\.)*" // 域名 -> www.
+                + "([0-9a-z][0-9a-z-]{0,61})?[0-9a-z]\\." // 二级域名
+                + "[a-z]{2,6})" // first level domain -> .com or .museum
+                + "(:[0-9]{1,4})?" // 端口 -> :80
+                + "((/?)|" // a slash isn't required if there is no file name
+                + "(/[0-9a-z_!~*'().;?:@&=+$,%#-]+)+/?)$")
+        val pattern = Pattern.compile(regex)
+        return pattern.matcher(url).matches()
     }
 }

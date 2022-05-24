@@ -9,9 +9,10 @@ import java.net.HttpURLConnection
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.net.URL
+import java.util.*
 
 
-internal class GenericWebViewClient : WebViewClient() {
+internal class GenericWebViewClient(private var theWebView: WebView) : WebViewClient() {
     private var requestCounter = 0
 
     internal interface RequestCounterListener {
