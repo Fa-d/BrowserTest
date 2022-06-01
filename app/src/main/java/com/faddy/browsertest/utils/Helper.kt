@@ -2,7 +2,6 @@ package com.faddy.browsertest.utils
 
 
 import android.app.Activity
-import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInfo
@@ -19,9 +18,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
-import com.faddy.browsertest.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 
@@ -49,7 +46,6 @@ fun Context.toast(msg: String?, time: Int = Toast.LENGTH_SHORT) {
 }
 
 
-
 fun Fragment.callHelplineNumber(number: String) {
     try {
         val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$number"))
@@ -61,7 +57,14 @@ fun Fragment.callHelplineNumber(number: String) {
 }
 
 
-fun Activity.alert(title: CharSequence? = null, message: CharSequence? = null, showCancel: Boolean = false, positiveButtonText: String = "ঠিক আছে", negativeButtonText: String = "ক্যানসেল", listener: ((type: Int) -> Unit)? = null): AlertDialog {
+fun Activity.alert(
+    title: CharSequence? = null,
+    message: CharSequence? = null,
+    showCancel: Boolean = false,
+    positiveButtonText: String = "ঠিক আছে",
+    negativeButtonText: String = "ক্যানসেল",
+    listener: ((type: Int) -> Unit)? = null
+): AlertDialog {
 
     val builder = MaterialAlertDialogBuilder(this)
     builder.setTitle(title)
@@ -88,7 +91,7 @@ fun Activity.alert(title: CharSequence? = null, message: CharSequence? = null, s
 }
 
 
-fun View.snackbar(message: String, length: Int = Snackbar.LENGTH_LONG){
+fun View.snackbar(message: String, length: Int = Snackbar.LENGTH_LONG) {
     Snackbar.make(this, message, length).also { snackbar ->
         snackbar.setAction("Cancel") {
             snackbar.dismiss()
@@ -96,9 +99,15 @@ fun View.snackbar(message: String, length: Int = Snackbar.LENGTH_LONG){
     }.show()
 }
 
-fun View.snackbar(message: String, length: Int = Snackbar.LENGTH_INDEFINITE, actionName: String, onClick: ((view: View) -> Unit)? = null): Snackbar {
+fun View.snackbar(
+    message: String,
+    length: Int = Snackbar.LENGTH_INDEFINITE,
+    actionName: String,
+    onClick: ((view: View) -> Unit)? = null
+): Snackbar {
     return Snackbar.make(this, message, length).also { snackbar ->
-        snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text).maxLines = 5
+        snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text).maxLines =
+            5
         snackbar.setActionTextColor(Color.YELLOW)
         snackbar.setAction(actionName) {
             onClick?.invoke(it)
@@ -109,7 +118,8 @@ fun View.snackbar(message: String, length: Int = Snackbar.LENGTH_INDEFINITE, act
 
 fun Context.isConnectedToNetwork(): Boolean {
     var isConnected = false
-    val connectivityManager = this.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager?
+    val connectivityManager =
+        this.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager?
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
         connectivityManager?.let {
             val networkCapabilities = it.activeNetwork ?: return false
@@ -133,7 +143,8 @@ val <T> T.exhaustive: T
     get() = this
 
 fun Number.spToPx(context: Context) = TypedValue.applyDimension(
-    TypedValue.COMPLEX_UNIT_SP, this.toFloat(), context.resources.displayMetrics).toInt()
+    TypedValue.COMPLEX_UNIT_SP, this.toFloat(), context.resources.displayMetrics
+).toInt()
 
 fun isPackageInstalled(packageManager: PackageManager, packageName: String): Boolean {
     return try {
@@ -170,7 +181,8 @@ fun Activity.appVersion(): String {
 
 fun Fragment.appVersion(): String {
     return try {
-        val pInfo: PackageInfo? = this.context?.packageManager?.getPackageInfo(this.context?.packageName ?: "", 0)
+        val pInfo: PackageInfo? =
+            this.context?.packageManager?.getPackageInfo(this.context?.packageName ?: "", 0)
         pInfo?.versionName ?: ""
     } catch (e: Exception) {
         e.printStackTrace()
@@ -189,25 +201,22 @@ fun Activity.appVersionCode(): Int {
 }
 
 fun Context.dpToPx(value: Float): Int {
-    return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, this.resources.displayMetrics).toInt()
+    return TypedValue.applyDimension(
+        TypedValue.COMPLEX_UNIT_DIP,
+        value,
+        this.resources.displayMetrics
+    ).toInt()
 }
 
 fun Fragment.appVersionCode(): Int {
     return try {
-        val pInfo: PackageInfo? = this.context?.packageManager?.getPackageInfo(this.context?.packageName ?: "", 0)
+        val pInfo: PackageInfo? =
+            this.context?.packageManager?.getPackageInfo(this.context?.packageName ?: "", 0)
         pInfo?.versionCode ?: 0
     } catch (e: Exception) {
         e.printStackTrace()
         0
     }
-}
-
-fun isValidDTCode(code: String): Boolean {
-    return code.matches("^DT-[\\d]+\$".toRegex())
-}
-
-fun isValidDTCodeChat(code: String): Boolean {
-    return code.matches("^DT-[\\d]+\$|^Dt-[\\d]+\$|^dt-[\\d]+\$".toRegex())
 }
 
 fun generateNameInitial(name: String?): String {
@@ -219,7 +228,7 @@ fun generateNameInitial(name: String?): String {
             initial += it[0]
         }
     }
-    return  initial
+    return initial
 }
 
 
@@ -227,6 +236,7 @@ fun isEnglishLetterOnly(text: String): Boolean {
     val match = """[a-zA-Z0-9/?><:;,(){}\[\]\-–_+=!@#%^&*|.'"\r\n ]*""".toRegex() // ${'['}
     return text.matches(match)
 }
+
 inline fun <T> sdk24orAbove(onSdk24: (flag: Boolean) -> T): T {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
         onSdk24(true)

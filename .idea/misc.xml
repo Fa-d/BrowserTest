@@ -3,13 +3,35 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="../../../../../layout/custom_preview.xml" value="0.32395833333333335" />
+        <entry key="app/src/main/res/drawable/bg_bottom_sheet_bg.xml" value="0.141" />
+        <entry key="app/src/main/res/drawable/ic_baseline_arrow_forward_24.xml" value="0.1425" />
+        <entry key="app/src/main/res/drawable/ic_baseline_close_24.xml" value="0.141" />
         <entry key="app/src/main/res/drawable/ic_baseline_home_24.xml" value="0.145" />
+        <entry key="app/src/main/res/drawable/icon_alert.xml" value="0.141" />
+        <entry key="app/src/main/res/drawable/icon_audio.xml" value="0.141" />
+        <entry key="app/src/main/res/drawable/icon_image_broken.xml" value="0.149" />
+        <entry key="app/src/main/res/drawable/icon_profile_changed.xml" value="0.141" />
+        <entry key="app/src/main/res/drawable/icon_profile_protected.xml" value="0.141" />
+        <entry key="app/src/main/res/drawable/icon_profile_standard.xml" value="0.141" />
+        <entry key="app/src/main/res/drawable/icon_profile_trusted.xml" value="0.141" />
+        <entry key="app/src/main/res/drawable/item_view_opened_tabs.xml" value="0.141" />
         <entry key="app/src/main/res/drawable/rounded_edittext.xml" value="0.174" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.19610507246376813" />
+        <entry key="app/src/main/res/layout/dialog_edit_extension.xml" value="0.20923913043478262" />
+        <entry key="app/src/main/res/layout/dialog_menu_overflow.xml" value="0.2265625" />
+        <entry key="app/src/main/res/layout/dialog_overflow.xml" value="0.228125" />
         <entry key="app/src/main/res/layout/fragment_home.xml" value="0.24520772298177082" />
+        <entry key="app/src/main/res/layout/fragment_opened_tabs_bottomsheet.xml" value="0.20923913043478262" />
+        <entry key="app/src/main/res/layout/item_list.xml" value="0.20923913043478262" />
+        <entry key="app/src/main/res/layout/item_menu.xml" value="0.175" />
+        <entry key="app/src/main/res/layout/item_view_dialogue_overflow.xml" value="0.228125" />
         <entry key="app/src/main/res/layout/item_view_history_recycler.xml" value="0.22826086956521738" />
         <entry key="app/src/main/res/layout/item_view_history_recycler_text.xml" value="0.22826086956521738" />
+        <entry key="app/src/main/res/layout/item_view_opened_tab.xml" value="0.20923913043478262" />
         <entry key="app/src/main/res/menu/main_browser_nav.xml" value="0.20729166666666668" />
+        <entry key="app/src/main/res/menu/main_menu.xml" value="0.2375" />
+        <entry key="app/src/main/res/menu/themenu.xml" value="0.22604166666666667" />
       </map>
     </option>
   </component>

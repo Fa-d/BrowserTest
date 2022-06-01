@@ -1,41 +1,44 @@
-package com.faddy.browsertest.webViewClient
+package com.faddy.browsertest.webViews
 
-import android.webkit.WebResourceRequest
-import android.webkit.WebResourceResponse
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import android.graphics.Bitmap
+import android.net.http.SslError
+import android.os.Build
+import android.util.Log
+import android.webkit.*
+import androidx.annotation.RequiresApi
 import java.io.*
 import java.net.HttpURLConnection
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.net.URL
-import java.util.*
 
-
-internal class GenericWebViewClient(private var theWebView: WebView) : WebViewClient() {
-    private var requestCounter = 0
-
-    internal interface RequestCounterListener {
-        fun countChanged(requestCount: Int)
+class GenericWebViewClient : WebViewClient() {
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    override fun shouldOverrideUrlLoading(
+        view: WebView?,
+        request: WebResourceRequest?
+    ): Boolean {
+        //return super.shouldOverrideUrlLoading(view, request)
+        val url = request?.url
+        view?.loadUrl(url.toString())
+        return true
+        // Url base logic here
+        /*val url = request?.url?.path
+        if (url?.startsWith("intent://scan/") == true) {
+            // Do Stuff
+            return true
+        }*/
     }
 
-    @Volatile
-    private var requestCounterListener: RequestCounterListener? = null
-    fun setRequestCounterListener(requestCounterListener: RequestCounterListener?) {
-        this.requestCounterListener = requestCounterListener
-    }
-
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     override fun shouldInterceptRequest(
         view: WebView,
         request: WebResourceRequest
     ): WebResourceResponse {
-        requestCounter++
-        if (requestCounterListener != null) {
-            requestCounterListener!!.countChanged(requestCounter)
-        }
         val urlString = request.url.toString().split("#").toTypedArray()[0]
+        Log.d("wowoowow", "1 ${request.url}")
+        Log.d("wowoowow", "2 ${urlString}")
         try {
-
             val connection: HttpURLConnection
             val proxied = true
             connection = if (proxied) {
@@ -53,10 +56,10 @@ internal class GenericWebViewClient(private var theWebView: WebView) : WebViewCl
             // transform response to required format for WebResourceResponse parameters
 
             // transform response to required format for WebResourceResponse parameters
-            val `in`: InputStream = BufferedInputStream(connection.inputStream)
+            val inputStream: InputStream = BufferedInputStream(connection.inputStream)
             val encoding = connection.contentEncoding
             connection.headerFields
-            val responseHeaders: MutableMap<String, String> = HashMap()
+            val responseHeaders: MutableMap<String, String> = java.util.HashMap()
             for (key in connection.headerFields.keys) {
                 //responseHeaders[key] = connection.getHeaderField(key)
             }
@@ -72,7 +75,7 @@ internal class GenericWebViewClient(private var theWebView: WebView) : WebViewCl
                 connection.responseCode,
                 connection.responseMessage,
                 responseHeaders,
-                `in`
+                inputStream
             )
 
         } catch (e: UnsupportedEncodingException) {
@@ -87,5 +90,32 @@ internal class GenericWebViewClient(private var theWebView: WebView) : WebViewCl
             HashMap(),
             ByteArrayInputStream(byteArrayOf())
         )
+    }
+
+
+    override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
+        super.onPageStarted(view, url, favicon)
+    }
+
+    override fun onPageFinished(view: WebView, url: String) {
+        super.onPageFinished(view, url)
+    }
+
+    override fun onReceivedError(
+        view: WebView?,
+        request: WebResourceRequest?,
+        error: WebResourceError?
+    ) {
+        super.onReceivedError(view, request, error)
+    }
+
+    override fun onReceivedSslError(
+        view: WebView?,
+        handler: SslErrorHandler?,
+        error: SslError?
+    ) {
+        super.onReceivedSslError(view, handler, error)
+        handler?.proceed()
+
     }
 }

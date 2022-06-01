@@ -80,4 +80,8 @@ dependencies {
 
     implementation 'info.guardianproject:tor-android:0.4.6.7'
     implementation 'info.guardianproject:jtorctl:0.4.5.7'
+
+    implementation 'androidx.webkit:webkit:1.4.0'
+    implementation 'androidx.preference:preference-ktx:1.2.0'
+    implementation 'androidx.legacy:legacy-preference-v14:1.0.0'
 }
