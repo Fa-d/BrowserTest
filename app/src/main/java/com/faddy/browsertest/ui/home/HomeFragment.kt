@@ -1,24 +1,24 @@
 package com.faddy.browsertest.ui.home
 
-import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
-import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.Handler
-import android.os.IBinder
 import android.util.DisplayMetrics
+import android.util.Log
 import android.view.*
 import android.view.inputmethod.EditorInfo
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.TextView.OnEditorActionListener
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.bundleOf
+import androidx.core.view.get
+import androidx.core.view.marginEnd
+import androidx.core.view.size
 import androidx.core.view.updateLayoutParams
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
@@ -27,13 +27,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.faddy.browsertest.R
 import com.faddy.browsertest.databinding.FragmentHomeBinding
+import com.faddy.browsertest.models.MostVisitedSitesModel
+import com.faddy.browsertest.models.URLData
 import com.faddy.browsertest.ui.history.OpenedTabsBottomSheet
 import com.faddy.browsertest.utils.*
 import com.faddy.browsertest.webViews.GenericWebView
 import com.faddy.browsertest.webViews.GenericWebViewChromeClient
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
-import org.torproject.jni.TorService
 import java.util.*
 import java.util.regex.Pattern
 
@@ -44,8 +45,11 @@ class HomeFragment : Fragment() {
     private lateinit var binding: FragmentHomeBinding
     private lateinit var genericContentFrame: FrameLayout
     private lateinit var genericWebView: WebView
-    private var historyAdapter = HistoryAdapter()
+    private var mostVisitedSitesAdapter = MostVisitedSitesAdapter()
     private var historyTextAdapter = HistoryTextAdapter()
+
+    //private var openNewTabTempAdapter = OpenedTabsAdapter()
+    private var newTabsTempList = mutableListOf<String>()
     private var historyTempTextList = listOf<String>(
         "I want white teeth.",
         "Having a monkey is illegal.\n",
@@ -80,7 +84,6 @@ class HomeFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        initService()
     }
 
     override fun onCreateView(
@@ -97,45 +100,22 @@ class HomeFragment : Fragment() {
         initListeners()
         initData()
         menuController()
-        registerForContextMenu(binding.lastIcon)
+        registerForContextMenu(binding.menuButtonMain)
         setHasOptionsMenu(true)
         registerForContextMenu(binding.theMainFrameLayout)
     }
 
     private fun menuController() {
         val operatorMenu = MenuOperator(requireContext(), genericWebView)
-        binding.lastIcon.setOnClickListener {
-            operatorMenu.showPopUp(binding.lastIcon)
+        binding.menuButtonMain.setOnClickListener {
+            operatorMenu.showPopUp(binding.menuButtonMain)
         }
-    }
-
-    private fun initService() {
-        activity?.bindService(
-            Intent(requireContext(), TorService::class.java),
-            object : ServiceConnection {
-                override fun onServiceConnected(name: ComponentName, service: IBinder) {
-                    val torService = (service as TorService.LocalBinder).service
-                    val conn = torService.torControlConnection
-                    while ((conn == torService.torControlConnection) == null) {
-                        try {
-                            Thread.sleep(500)
-                        } catch (e: InterruptedException) {
-                            e.printStackTrace()
-                        }
-                    }
-                    if (conn != null) {
-                        Toast.makeText(
-                            requireContext(),
-                            "Got Tor control connection",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-
-                override fun onServiceDisconnected(name: ComponentName) {}
-            },
-            AppCompatActivity.BIND_AUTO_CREATE
-        )
+        operatorMenu.closeApp = {
+            activity?.finish()
+        }
+        operatorMenu.openNewTab = {
+            showPickupBottomSheet()
+        }
     }
 
     private fun initListeners() {
@@ -145,25 +125,27 @@ class HomeFragment : Fragment() {
             }
         }
         binding.searchET.addTextChangedListener { _ ->
-            val tempString = binding.searchET.text.toString().trim()
-            if (tempString == "") binding.searchbarRecycler.visibility =
-                View.GONE else binding.searchbarRecycler.visibility = View.VISIBLE
+            val currentSearchString = binding.searchET.text.toString().trim()
+            binding.searchSuggestionRecycler.visibility =
+                if (currentSearchString == "") View.GONE else View.VISIBLE
             val theFilteredResult =
-                historyTempTextList.filter { listText -> listText.contains(tempString) }
+                historyTempTextList.filter { listText -> listText.contains(currentSearchString) }
             historyTextAdapter.initLoad(theFilteredResult)
         }
-        //binding.theMainWebView.addView(WebView(requireContext()))
     }
 
-    private fun visibilityUnitController(firstView: Boolean = false) {
-        if (isWebViewInflated() || firstView) { //webview inflated so UI... searchbar should be at middle
+    private fun visibilityUnitController(
+        isSearchETSelected: Boolean = false,
+        isNotHomeButtonPressed: Boolean = true
+    ) {
+        if ((isWebViewInflated() || isSearchETSelected) && isNotHomeButtonPressed) { //webview inflated so UI... searchbar should be at middle
             binding.guidelineInner.setGuidelinePercent(0.0f)
-            showHistoryAndHideRecent(true)
+            showFrequentlyVisitedAndHideSearchSuggestions(true)
             updateLayoutParamsOfSearchbar("min")
 
         } else { //visible webview so
             binding.guidelineInner.setGuidelinePercent(0.40f)
-            showHistoryAndHideRecent(false)
+            showFrequentlyVisitedAndHideSearchSuggestions(false)
             updateLayoutParamsOfSearchbar("max")
         }
     }
@@ -180,6 +162,15 @@ class HomeFragment : Fragment() {
                 marginStart = 0
                 width = 0
             }
+            binding.tabcountButton.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                topToTop = binding.root.top
+                bottomToBottom = binding.root.bottom
+            }
+            binding.menuButtonMain.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                topToTop = binding.root.top
+                endToEnd = binding.root.marginEnd
+                bottomToBottom = ConstraintLayout.LayoutParams.UNSET
+            }
         } else if (flag == "max") {
             binding.serachLT.updateLayoutParams<ConstraintLayout.LayoutParams> {
                 endToStart = ConstraintLayout.LayoutParams.UNSET
@@ -190,6 +181,14 @@ class HomeFragment : Fragment() {
                 marginEnd = 10
                 marginStart = 10
                 width = ConstraintLayout.LayoutParams.MATCH_PARENT
+            }
+            binding.tabcountButton.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                topToTop = binding.searchET.top
+                bottomToBottom = ConstraintLayout.LayoutParams.UNSET
+            }
+            binding.menuButtonMain.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                topToTop = binding.tabcountButton.top
+                bottomToBottom = binding.tabcountButton.bottom
             }
         }
     }
@@ -215,12 +214,10 @@ class HomeFragment : Fragment() {
 
 
         binding.cancelSearchButton.setOnClickListener {
-            binding.searchET.setText("")
-            binding.searchET.clearFocus()
-            binding.historyRecycler.visibility = View.VISIBLE
-            binding.searchbarRecycler.visibility = View.GONE
+            hideKeyboardAndUnfocus()
+            binding.frequentlyVisitedRecyclerView.visibility = View.VISIBLE
+            binding.searchSuggestionRecycler.visibility = View.GONE
             binding.cancelSearchButton.visibility = View.GONE
-            hideKeyboard()
             visibilityUnitController()
         }
         binding.searchET.setOnEditorActionListener(OnEditorActionListener { v, actionId, event ->
@@ -234,34 +231,40 @@ class HomeFragment : Fragment() {
                         }"
                     )
                 }
-                /*viewModel.checkIfDataAlreadyExists(genericWebView.url ?: "")
-                    .observe(viewLifecycleOwner, Observer { isTrue ->
+
+                viewModel.checkIfDataAlreadyExists(genericWebView.url ?: "")
+                    .observe(viewLifecycleOwner, androidx.lifecycle.Observer { isTrue ->
                         if (isTrue) {
                             viewModel.getHitCountSingleSite(genericWebView.url ?: "")
-                                .observe(viewLifecycleOwner, Observer { isFetchedCount ->
-                                    if (isFetchedCount > 0) {
-                                        viewModel.incrementHitCount(
-                                            isFetchedCount + 1,
-                                            genericWebView.url ?: ""
-                                        ).observe(viewLifecycleOwner, Observer {
-                                            if (it) {
-                                                Log.d(
-                                                    "TheTad",
-                                                     "Suggessfull inserted new URL Into Database"
+                                .observe(
+                                    viewLifecycleOwner,
+                                    androidx.lifecycle.Observer { isFetchedCount ->
+                                        if (isFetchedCount > 0) {
+                                            viewModel.incrementHitCount(
+                                                isFetchedCount + 1,
+                                                genericWebView.url ?: ""
+                                            ).observe(
+                                                viewLifecycleOwner,
+                                                androidx.lifecycle.Observer {
+                                                    if (it) {
+                                                        Log.d(
+                                                            "TheTad",
+                                                            "Suggessfull inserted new URL Into Database"
+                                                        )
+                                                    }
+                                                })
+                                        } else {
+                                            viewModel.insertUrlIntoTable(
+                                                URLData(
+                                                    generatedURL = genericWebView.url ?: "",
+                                                    title = binding.searchET.text.toString(),
+                                                    hitTimeStamp = Calendar.getInstance().timeInMillis,
+                                                    hitCount = 1,
+                                                    //favIconBlob = imageToBitmap(genericWebView.favicon!!)
                                                 )
-                                            }
-                                        })
-                                    } else {
-                                        viewModel.insertUrlIntoTable(
-                                            URLData(
-                                                generatedURL = genericWebView.url ?: "",
-                                                title = binding.searchET.text.toString(),
-                                                hitTimeStamp = Calendar.getInstance().timeInMillis,
-                                                hitCount = 1
                                             )
-                                        )
-                                    }
-                                })
+                                        }
+                                    })
 
                         } else {
                             viewModel.insertUrlIntoTable(
@@ -269,16 +272,16 @@ class HomeFragment : Fragment() {
                                     generatedURL = genericWebView.url ?: "",
                                     title = binding.searchET.text.toString(),
                                     hitTimeStamp = Calendar.getInstance().timeInMillis,
-                                    hitCount = 1
+                                    hitCount = 1,
+                                    //favIconBlob = imageToBitmap(genericWebView.favicon!!)
                                 )
                             )
                         }
-                    })*/
-                hideKeyboard()
+                    })
                 genericContentFrame.visibility = View.VISIBLE
                 visibilityUnitController(true)
+                hideKeyboardAndUnfocus()
                 binding.searchET.setText(genericWebView.url)
-                binding.searchET.clearFocus()
                 return@OnEditorActionListener true
             }
             false
@@ -297,32 +300,103 @@ class HomeFragment : Fragment() {
             false
         }
 
+        binding.homeIcon.setOnClickListener {
+            state0()
+        }
+    }
+
+    /**
+     * hidekeyboard
+     * unfocus edittext
+     * */
+
+    private fun hideKeyboardAndUnfocus() {
+        binding.searchET.setText("")
+        binding.searchET.clearFocus()
+        hideKeyboard()
+    }
+
+
+    private fun state0() {
+        //todo
+        /**
+         * Drag searchbar to middle (compute the size)
+         * show frequently visited sites
+         * hide search recycler
+         * update tab count
+         * reset webview to gone clear url
+         *
+         * */
+        visibilityUnitController(isSearchETSelected = false, isNotHomeButtonPressed = false)
+        hideKeyboardAndUnfocus()
+    }
+
+    fun stateSearch1Webview0() {
+
     }
 
     private fun initData() {
-        historyAdapter.initLoad(
-            listOf<String>(
-                "a",
-                "b",
-                "c",
-                "d",
-                "e",
-                "f",
-                "g",
-                "h",
-                "i",
-                "j",
-                "k"
-            )
-        )
+        viewModel.getTop9MostVisitedSites()
+            .observe(viewLifecycleOwner, androidx.lifecycle.Observer { datalist ->
+                val tempTitleList = mutableListOf<MostVisitedSitesModel>()
+                for (data in datalist) {
+                    tempTitleList.add(MostVisitedSitesModel(data.title, data.favIconBlob))
+                    Log.d("listTeg", "${data.title}")
+                }
+                mostVisitedSitesAdapter.initLoad(tempTitleList)
+            })
     }
 
+    fun webViewInitializer() {
+        genericWebView = GenericWebView(requireActivity()).initView()
+        val chromeClientInstance = GenericWebViewChromeClient()
+        chromeClientInstance.onFavIconRecieved = {
+            Toast.makeText(requireContext(), "hey Recieved and ${binding.theMainFrameLayout.height}", Toast.LENGTH_SHORT).show()
+        }
+        chromeClientInstance.progresse.observe(viewLifecycleOwner, androidx.lifecycle.Observer {
+            if (it == 0 || it == 100) {
+                binding.searchProgress.visibility = View.GONE
+                if (it == 100 && genericWebView.favicon != null) {
+                    Toast.makeText(requireContext(), "goy", Toast.LENGTH_SHORT).show()
+                    viewModel.setFavionToDB(
+                        imageToBitmap(genericWebView.favicon!!),
+                        genericWebView.url ?: ""
+                    )
+                }
+            } else {
+                binding.searchProgress.visibility = View.VISIBLE
+            }
+            binding.searchProgress.progress = it
+        })
+        genericWebView.webChromeClient = chromeClientInstance
+        genericWebView.webViewClient = WebViewClient()
+
+        genericWebView.settings.apply {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            allowFileAccess = true
+            setSupportZoom(true)
+            builtInZoomControls = true
+            displayZoomControls = false
+            mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+        }
+        with(genericWebView) {
+            setLayerType(View.LAYER_TYPE_HARDWARE, null)
+            clearHistory()
+            isHorizontalScrollBarEnabled = false
+            isVerticalScrollBarEnabled = false
+        }
+        genericContentFrame.addView(genericWebView)
+    }
+
+
     private fun initView() {
+        binding.tabcountButton.text = 1.toString()
         genericWebView = GenericWebView(requireActivity()).initView()
         binding.searchProgress.visibility = View.VISIBLE
         genericContentFrame = binding.theMainFrameLayout
-        genericContentFrame.removeAllViews()
-        genericContentFrame.addView(genericWebView)
+        //genericContentFrame.removeAllViews()
+        genericContentFrame.addView(genericWebView, 0)
         val chromeClientInstance = GenericWebViewChromeClient()
         chromeClientInstance.progresse.observe(viewLifecycleOwner, androidx.lifecycle.Observer {
             if (it == 0 || it == 100) {
@@ -335,7 +409,7 @@ class HomeFragment : Fragment() {
         genericWebView.webChromeClient = chromeClientInstance
         genericWebView.webViewClient = WebViewClient()
 
-        /*binding.theMainWebView.settings.apply {
+        genericWebView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
             allowFileAccess = true
@@ -344,23 +418,23 @@ class HomeFragment : Fragment() {
             displayZoomControls = false
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
         }
-        with(binding.theMainWebView) {
+        with(genericWebView) {
             setLayerType(View.LAYER_TYPE_HARDWARE, null)
             clearHistory()
             isHorizontalScrollBarEnabled = false
             isVerticalScrollBarEnabled = false
-        }*/
-        with(binding.historyRecycler) {
+        }
+        with(binding.frequentlyVisitedRecyclerView) {
             setHasFixedSize(true)
             layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 3)
-            adapter = historyAdapter
+            adapter = mostVisitedSitesAdapter
         }
-        with(binding.searchbarRecycler) {
+        with(binding.searchSuggestionRecycler) {
             setHasFixedSize(true)
             layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
             adapter = historyTextAdapter
         }
-        binding.firstButton.setOnClickListener {
+        binding.tabcountButton.setOnClickListener {
             showPickupBottomSheet()
         }
     }
@@ -400,15 +474,17 @@ class HomeFragment : Fragment() {
         return genericContentFrame.height > 0
     }
 
-    private fun showHistoryAndHideRecent(flag: Boolean) {
+    private fun showFrequentlyVisitedAndHideSearchSuggestions(flag: Boolean) {
         if (flag) {
-            binding.historyRecycler.visibility = View.GONE
-            binding.searchbarRecycler.visibility = View.VISIBLE
+            binding.frequentlyVisitedRecyclerView.visibility = View.GONE
+            binding.searchSuggestionRecycler.visibility = View.VISIBLE
             binding.cancelSearchButton.visibility = View.VISIBLE
+            binding.theMainFrameLayout.visibility = View.VISIBLE
         } else {
-            binding.historyRecycler.visibility = View.VISIBLE
-            binding.searchbarRecycler.visibility = View.GONE
+            binding.frequentlyVisitedRecyclerView.visibility = View.VISIBLE
+            binding.searchSuggestionRecycler.visibility = View.GONE
             binding.cancelSearchButton.visibility = View.GONE
+            binding.theMainFrameLayout.visibility = View.GONE
         }
     }
 
@@ -474,8 +550,33 @@ class HomeFragment : Fragment() {
     }
 
     private fun showPickupBottomSheet() {
+        if (genericContentFrame.childCount > 0) {
+            newTabsTempList.clear()
+        }
+        for (i: Int in 0 until (genericContentFrame.size)) {
+            newTabsTempList.add((genericContentFrame.getChildAt(i) as WebView).title.toString())
+        }
         val tag: String = OpenedTabsBottomSheet.tag
-        val dialog: OpenedTabsBottomSheet = OpenedTabsBottomSheet.newInstance(bundleOf())
+        val dialog: OpenedTabsBottomSheet =
+            OpenedTabsBottomSheet.newInstance(bundleOf("newList" to newTabsTempList as ArrayList<String>))
         dialog.show(childFragmentManager, tag)
+
+        dialog.onNewTabClicked = {
+            if (it) {
+                webViewInitializer()
+            }
+        }
+        dialog.onTabSelected = {
+            genericContentFrame[it].bringToFront()
+        }
+        dialog.onTabDeleteClicked = {
+            genericContentFrame.removeViewAt(it)
+        }
+        dialog.isDismissed = {
+            if (it) {
+                binding.tabcountButton.text = genericContentFrame.childCount.toString()
+            }
+        }
     }
+
 }

@@ -22,4 +22,14 @@ interface URLDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUrlIntoTable(model: URLData)
+
+    @Query("SELECT COUNT(*) FROM url_table WHERE generatedURL = :url AND isBookmarked == 1")
+    suspend fun isCurrentURLBookmarked(url: String): Int
+
+    @Query("SELECT * FROM url_table ORDER BY hitCount DESC LIMIT 10")
+    suspend fun getTop9MostVisitedSites(): List<URLData>
+
+    @Query("UPDATE url_table SET favIconBlob =:image WHERE generatedURL = :theURL")
+    suspend fun setFavionToDB(image: ByteArray, theURL: String)
+
 }

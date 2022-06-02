@@ -15,5 +15,9 @@ class AppRepository @Inject constructor(private val urlDao: URLDao) {
         urlDao.incrementHitCount(newCount, theURL)
 
     suspend fun insertUrlIntoTable(model: URLData) = urlDao.insertUrlIntoTable(model)
+    suspend fun isCurrentURLBookmarked(url: String) = urlDao.isCurrentURLBookmarked(url)
+    suspend fun getTop9MostVisitedSites() = urlDao.getTop9MostVisitedSites()
+    suspend fun setFavionToDB(image: ByteArray, theURL: String) =
+        urlDao.setFavionToDB(image, theURL)
 
 }

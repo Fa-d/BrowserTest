@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -21,6 +23,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import java.io.ByteArrayOutputStream
 
 fun Fragment.hideKeyboard() {
     view?.let { activity?.hideKeyboard(it) }
@@ -241,4 +244,14 @@ inline fun <T> sdk24orAbove(onSdk24: (flag: Boolean) -> T): T {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
         onSdk24(true)
     } else onSdk24(false)
+}
+
+fun getBitmap(byteimage: ByteArray): Bitmap? {
+    return BitmapFactory.decodeByteArray(byteimage, 0, byteimage.size)
+}
+
+fun imageToBitmap(image: Bitmap): ByteArray {
+    val stream = ByteArrayOutputStream()
+    image.compress(Bitmap.CompressFormat.PNG, 100, stream)
+    return stream.toByteArray()
 }

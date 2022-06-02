@@ -30,24 +30,32 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <ImageView
-        android:id="@+id/firstButton"
-        android:layout_width="0dp"
+    <TextView
+        android:id="@+id/tabcountButton"
+        android:layout_width="48dp"
         android:layout_height="48dp"
-        android:layout_margin="2dp"
-        android:src="@drawable/ic_baseline_check_box_outline_blank_24"
-        app:layout_constraintEnd_toStartOf="@+id/lastIcon"
+        android:background="@drawable/ic_baseline_check_box_outline_blank_24"
+        android:gravity="center"
+        android:maxLines="1"
+        android:padding="5dp"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@+id/menuButtonMain"
         app:layout_constraintStart_toEndOf="@+id/guideline80"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="5">
+
+    </TextView>
+
 
     <ImageView
-        android:id="@+id/lastIcon"
+        android:id="@+id/menuButtonMain"
         android:layout_width="0dp"
         android:layout_height="48dp"
         android:layout_margin="2dp"
         android:src="@drawable/ic_baseline_more_vert_24"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/firstButton"
+        app:layout_constraintStart_toEndOf="@+id/tabcountButton"
         app:layout_constraintTop_toTopOf="parent" />
 
     <com.google.android.material.appbar.AppBarLayout
@@ -65,6 +73,7 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
+
             <ImageView
                 android:layout_width="0dp"
                 android:layout_height="100dp"
@@ -117,12 +126,12 @@
             android:layout_height="20dp"
             android:layout_margin="15dp"
             android:background="@drawable/ic_baseline_cancel_24"
-            app:layout_constraintBottom_toBottomOf="parent"
             android:visibility="gone"
-            tools:visibility="visible"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/searchET"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="visible" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 
@@ -137,7 +146,7 @@
         app:trackColor="@color/teal_200" />
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/searchbarRecycler"
+        android:id="@+id/searchSuggestionRecycler"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="10dp"
@@ -150,9 +159,9 @@
         tools:visibility="gone" />
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/historyRecycler"
+        android:id="@+id/frequentlyVisitedRecyclerView"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_marginHorizontal="10dp"
         android:layout_marginTop="2dp"
         android:orientation="horizontal"
@@ -164,7 +173,7 @@
         app:layout_constraintTop_toBottomOf="@+id/serachLT"
         app:spanCount="3"
         tools:listitem="@layout/item_view_history_recycler"
-        tools:visibility="gone" />
+        tools:visibility="visible" />
 
     <FrameLayout
         android:id="@+id/theMainFrameLayout"

@@ -71,4 +71,37 @@ constructor(private val repository: AppRepository) : ViewModel() {
         }
         return responseBody
     }
+
+    fun isCurrentURLBookmarked(url: String): LiveData<Boolean> {
+        val responseBody = MutableLiveData<Boolean>(false)
+        viewModelScope.launch(Dispatchers.IO) {
+            val response = repository.isCurrentURLBookmarked(url)
+            withContext(Dispatchers.Main) {
+                responseBody.value = true
+            }
+        }
+        return responseBody
+    }
+
+    fun getTop9MostVisitedSites(): LiveData<List<URLData>> {
+        val responseBody = MutableLiveData<List<URLData>>()
+        viewModelScope.launch(Dispatchers.IO) {
+            val response = repository.getTop9MostVisitedSites()
+            withContext(Dispatchers.Main) {
+                responseBody.value = response
+            }
+        }
+        return responseBody
+    }
+
+    fun setFavionToDB(image: ByteArray, theURL: String): LiveData<Boolean> {
+        val responseBody = MutableLiveData<Boolean>(false)
+        viewModelScope.launch(Dispatchers.IO) {
+            val response = repository.setFavionToDB(image, theURL)
+            withContext(Dispatchers.Main) {
+                responseBody.value = true
+            }
+        }
+        return responseBody
+    }
 }

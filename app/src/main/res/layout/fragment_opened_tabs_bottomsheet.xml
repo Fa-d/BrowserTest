@@ -28,12 +28,36 @@
         android:background="@color/black"
         app:layout_constraintTop_toBottomOf="@id/titleTV" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/openedItems"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+    <ImageView
+        android:id="@+id/openNewTab"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:rotation="45"
+        android:src="@drawable/ic_baseline_close_24"
+        app:layout_constraintBottom_toTopOf="@+id/textOpenNewTab"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/view"
+        app:layout_constraintTop_toBottomOf="@+id/view" />
+
+    <TextView
+        android:id="@+id/textOpenNewTab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="15dp"
+        android:text="Open new Tab"
+        android:textSize="16dp"
+        app:layout_constraintBottom_toTopOf="@+id/openedItemsRecycler"
+        app:layout_constraintEnd_toEndOf="@+id/openNewTab"
+        app:layout_constraintStart_toStartOf="@+id/openNewTab"
+        app:layout_constraintTop_toBottomOf="@+id/openNewTab" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/openedItemsRecycler"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textOpenNewTab"
         tools:listitem="@layout/item_view_opened_tab" />
 </androidx.constraintlayout.widget.ConstraintLayout>

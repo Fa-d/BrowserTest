@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="15dp"
-        android:textSize="16dp"
+        android:textSize="18dp"
         tools:text="Somthign is here" />
 
 </LinearLayout>
