@@ -19,5 +19,7 @@ class AppRepository @Inject constructor(private val urlDao: URLDao) {
     suspend fun getTop9MostVisitedSites() = urlDao.getTop9MostVisitedSites()
     suspend fun setFavionToDB(image: ByteArray, theURL: String) =
         urlDao.setFavionToDB(image, theURL)
+    suspend fun setTitleOfUrl(title: String, theURL: String) =
+        urlDao.setTitleOfUrl(title, theURL)
 
 }

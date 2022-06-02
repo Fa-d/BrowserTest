@@ -9,7 +9,7 @@ class OpenedTabsAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val dataList: MutableList<String> = mutableListOf()
     var closeTab: ((index: Int) -> Unit)? = null
-    var onTabSelect: ((index: Int) -> Unit)? = null
+    var onTabSelect: ((index: Int, theTabTitle: String) -> Unit)? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val binding: ItemViewOpenedTabBinding = ItemViewOpenedTabBinding.inflate(
@@ -40,7 +40,7 @@ class OpenedTabsAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             }
             binding.root.setOnClickListener {
                 if (adapterPosition != RecyclerView.NO_POSITION) {
-                    onTabSelect?.invoke(adapterPosition)
+                    onTabSelect?.invoke(adapterPosition, binding.urlText.text.toString())
                 }
             }
         }

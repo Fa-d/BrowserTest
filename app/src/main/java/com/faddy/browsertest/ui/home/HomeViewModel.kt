@@ -99,7 +99,18 @@ constructor(private val repository: AppRepository) : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             val response = repository.setFavionToDB(image, theURL)
             withContext(Dispatchers.Main) {
-                responseBody.value = true
+                responseBody.value = response == 1
+            }
+        }
+        return responseBody
+    }
+
+    fun setTitleOfUrl(title: String, theURL: String): LiveData<Boolean> {
+        val responseBody = MutableLiveData<Boolean>(false)
+        viewModelScope.launch(Dispatchers.IO) {
+            val response = repository.setTitleOfUrl(title, theURL)
+            withContext(Dispatchers.Main) {
+                responseBody.value = response == 1
             }
         }
         return responseBody

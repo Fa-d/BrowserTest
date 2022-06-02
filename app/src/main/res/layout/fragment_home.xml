@@ -145,18 +145,6 @@
         app:layout_constraintTop_toBottomOf="@+id/serachLT"
         app:trackColor="@color/teal_200" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/searchSuggestionRecycler"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="10dp"
-        android:layout_marginTop="2dp"
-        android:visibility="visible"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/serachLT"
-        tools:listitem="@layout/item_view_history_recycler_text"
-        tools:visibility="gone" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/frequentlyVisitedRecyclerView"
@@ -173,7 +161,7 @@
         app:layout_constraintTop_toBottomOf="@+id/serachLT"
         app:spanCount="3"
         tools:listitem="@layout/item_view_history_recycler"
-        tools:visibility="visible" />
+        tools:visibility="gone" />
 
     <FrameLayout
         android:id="@+id/theMainFrameLayout"
@@ -186,5 +174,17 @@
         app:layout_constraintTop_toBottomOf="@+id/searchProgress"
         tools:visibility="gone" />
 
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/searchSuggestionRecycler"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginTop="2dp"
+        android:visibility="visible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/serachLT"
+        tools:listitem="@layout/item_view_history_recycler_text"
+        tools:visibility="gone" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

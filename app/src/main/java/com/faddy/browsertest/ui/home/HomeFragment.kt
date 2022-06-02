@@ -9,7 +9,6 @@ import android.view.*
 import android.view.inputmethod.EditorInfo
 import android.webkit.WebSettings
 import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.TextView.OnEditorActionListener
@@ -33,6 +32,7 @@ import com.faddy.browsertest.ui.history.OpenedTabsBottomSheet
 import com.faddy.browsertest.utils.*
 import com.faddy.browsertest.webViews.GenericWebView
 import com.faddy.browsertest.webViews.GenericWebViewChromeClient
+import com.faddy.browsertest.webViews.GenericWebViewClient
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.*
@@ -231,53 +231,6 @@ class HomeFragment : Fragment() {
                         }"
                     )
                 }
-
-                viewModel.checkIfDataAlreadyExists(genericWebView.url ?: "")
-                    .observe(viewLifecycleOwner, androidx.lifecycle.Observer { isTrue ->
-                        if (isTrue) {
-                            viewModel.getHitCountSingleSite(genericWebView.url ?: "")
-                                .observe(
-                                    viewLifecycleOwner,
-                                    androidx.lifecycle.Observer { isFetchedCount ->
-                                        if (isFetchedCount > 0) {
-                                            viewModel.incrementHitCount(
-                                                isFetchedCount + 1,
-                                                genericWebView.url ?: ""
-                                            ).observe(
-                                                viewLifecycleOwner,
-                                                androidx.lifecycle.Observer {
-                                                    if (it) {
-                                                        Log.d(
-                                                            "TheTad",
-                                                            "Suggessfull inserted new URL Into Database"
-                                                        )
-                                                    }
-                                                })
-                                        } else {
-                                            viewModel.insertUrlIntoTable(
-                                                URLData(
-                                                    generatedURL = genericWebView.url ?: "",
-                                                    title = binding.searchET.text.toString(),
-                                                    hitTimeStamp = Calendar.getInstance().timeInMillis,
-                                                    hitCount = 1,
-                                                    //favIconBlob = imageToBitmap(genericWebView.favicon!!)
-                                                )
-                                            )
-                                        }
-                                    })
-
-                        } else {
-                            viewModel.insertUrlIntoTable(
-                                URLData(
-                                    generatedURL = genericWebView.url ?: "",
-                                    title = binding.searchET.text.toString(),
-                                    hitTimeStamp = Calendar.getInstance().timeInMillis,
-                                    hitCount = 1,
-                                    //favIconBlob = imageToBitmap(genericWebView.favicon!!)
-                                )
-                            )
-                        }
-                    })
                 genericContentFrame.visibility = View.VISIBLE
                 visibilityUnitController(true)
                 hideKeyboardAndUnfocus()
@@ -340,7 +293,7 @@ class HomeFragment : Fragment() {
             .observe(viewLifecycleOwner, androidx.lifecycle.Observer { datalist ->
                 val tempTitleList = mutableListOf<MostVisitedSitesModel>()
                 for (data in datalist) {
-                    tempTitleList.add(MostVisitedSitesModel(data.title, data.favIconBlob))
+                    tempTitleList.add(MostVisitedSitesModel(data.title, data.favIconBlob!!))
                     Log.d("listTeg", "${data.title}")
                 }
                 mostVisitedSitesAdapter.initLoad(tempTitleList)
@@ -350,26 +303,44 @@ class HomeFragment : Fragment() {
     fun webViewInitializer() {
         genericWebView = GenericWebView(requireActivity()).initView()
         val chromeClientInstance = GenericWebViewChromeClient()
-        chromeClientInstance.onFavIconRecieved = {
-            Toast.makeText(requireContext(), "hey Recieved and ${binding.theMainFrameLayout.height}", Toast.LENGTH_SHORT).show()
+        chromeClientInstance.onFavIconRecieved = { icon ->
+            Log.d("THeDebugggingIcon 21", "$icon")
+            if (icon == null) {
+                Toast.makeText(
+                    requireContext(), "Icon is null", Toast.LENGTH_SHORT
+                )
+                    .show()
+            } else {
+                viewModel.setFavionToDB(imageToBitmap(icon), genericWebView.url!!)
+                    .observe(viewLifecycleOwner, androidx.lifecycle.Observer {
+                        if (it) {
+                            Toast.makeText(
+                                requireContext(), "Succesfully inserted", Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    })
+            }
         }
         chromeClientInstance.progresse.observe(viewLifecycleOwner, androidx.lifecycle.Observer {
-            if (it == 0 || it == 100) {
-                binding.searchProgress.visibility = View.GONE
-                if (it == 100 && genericWebView.favicon != null) {
-                    Toast.makeText(requireContext(), "goy", Toast.LENGTH_SHORT).show()
-                    viewModel.setFavionToDB(
-                        imageToBitmap(genericWebView.favicon!!),
-                        genericWebView.url ?: ""
-                    )
-                }
-            } else {
-                binding.searchProgress.visibility = View.VISIBLE
-            }
+            binding.searchProgress.visibility =
+                if (it == 0 || it == 100) View.GONE else View.VISIBLE
             binding.searchProgress.progress = it
         })
         genericWebView.webChromeClient = chromeClientInstance
-        genericWebView.webViewClient = WebViewClient()
+        val genericWebViewInstance = GenericWebViewClient()
+        genericWebViewInstance.onTitleRecieved = {
+            saveInformationsToLocalDB()
+            viewModel.setTitleOfUrl(it, genericWebView.url ?: "")
+                .observe(viewLifecycleOwner, androidx.lifecycle.Observer { isUpdatedTitle ->
+                    if (isUpdatedTitle) Toast.makeText(
+                        requireContext(), "title Updated", Toast.LENGTH_SHORT
+                    ).show()
+                })
+        }
+        genericWebViewInstance.refreshUrlTitle = { newURL ->
+            binding.searchET.setText(newURL)
+        }
+        genericWebView.webViewClient = genericWebViewInstance
 
         genericWebView.settings.apply {
             javaScriptEnabled = true
@@ -389,13 +360,61 @@ class HomeFragment : Fragment() {
         genericContentFrame.addView(genericWebView)
     }
 
+    private fun saveInformationsToLocalDB() {
+        viewModel.checkIfDataAlreadyExists(genericWebView.url ?: "")
+            .observe(viewLifecycleOwner, androidx.lifecycle.Observer { isTrue ->
+                if (isTrue) {
+                    viewModel.getHitCountSingleSite(genericWebView.url ?: "")
+                        .observe(
+                            viewLifecycleOwner,
+                            androidx.lifecycle.Observer { isFetchedCount ->
+                                if (isFetchedCount > 0) {
+                                    viewModel.incrementHitCount(
+                                        isFetchedCount + 1,
+                                        genericWebView.url ?: ""
+                                    ).observe(
+                                        viewLifecycleOwner,
+                                        androidx.lifecycle.Observer {
+                                            if (it) {
+                                                Log.d(
+                                                    "TheTad",
+                                                    "Suggessfull inserted new URL Into Database"
+                                                )
+                                            }
+                                        })
+                                } else {
+                                    viewModel.insertUrlIntoTable(
+                                        URLData(
+                                            generatedURL = genericWebView.url ?: "",
+                                            title = genericWebView.title ?: "",
+                                            hitTimeStamp = Calendar.getInstance().timeInMillis,
+                                            hitCount = 1,
+                                            favIconBlob = ByteArray(0)
+                                        )
+                                    )
+                                }
+                            })
+                } else {
+                    viewModel.insertUrlIntoTable(
+                        URLData(
+                            generatedURL = genericWebView.url ?: "",
+                            title = genericWebView.title ?: "",
+                            hitTimeStamp = Calendar.getInstance().timeInMillis,
+                            hitCount = 1,
+                            favIconBlob = ByteArray(0)
+                            //favIconBlob = imageToBitmap(genericWebView.favicon!!)
+                        )
+                    )
+                }
+            })
+    }
+
 
     private fun initView() {
         binding.tabcountButton.text = 1.toString()
         genericWebView = GenericWebView(requireActivity()).initView()
         binding.searchProgress.visibility = View.VISIBLE
         genericContentFrame = binding.theMainFrameLayout
-        //genericContentFrame.removeAllViews()
         genericContentFrame.addView(genericWebView, 0)
         val chromeClientInstance = GenericWebViewChromeClient()
         chromeClientInstance.progresse.observe(viewLifecycleOwner, androidx.lifecycle.Observer {
@@ -407,7 +426,36 @@ class HomeFragment : Fragment() {
             binding.searchProgress.progress = it
         })
         genericWebView.webChromeClient = chromeClientInstance
-        genericWebView.webViewClient = WebViewClient()
+        chromeClientInstance.onFavIconRecieved = { icon ->
+            Log.d("THeDebugggingIcon 22", "$icon")
+            if (icon == null) {
+                Toast.makeText(requireContext(), "Icon Null", Toast.LENGTH_SHORT)
+                    .show()
+            } else {
+                viewModel.setFavionToDB(imageToBitmap(icon), genericWebView.url!!)
+                    .observe(viewLifecycleOwner, androidx.lifecycle.Observer {
+                        if (it) {
+                            Toast.makeText(
+                                requireContext(), "Succesfully inserted", Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    })
+            }
+        }
+        val genericWebViewInstance = GenericWebViewClient()
+        genericWebViewInstance.onTitleRecieved = {
+            saveInformationsToLocalDB()
+            viewModel.setTitleOfUrl(it, genericWebView.url ?: "")
+                .observe(viewLifecycleOwner, androidx.lifecycle.Observer { isUpdatedTItle ->
+                    if (isUpdatedTItle) Toast.makeText(
+                        requireContext(), "title Updated", Toast.LENGTH_SHORT
+                    ).show()
+                })
+        }
+        genericWebViewInstance.refreshUrlTitle = { newURL ->
+            binding.searchET.setText(newURL)
+        }
+        genericWebView.webViewClient = genericWebViewInstance
 
         genericWebView.settings.apply {
             javaScriptEnabled = true
@@ -566,8 +614,12 @@ class HomeFragment : Fragment() {
                 webViewInitializer()
             }
         }
-        dialog.onTabSelected = {
-            genericContentFrame[it].bringToFront()
+        dialog.onTabSelected = { _, tabTitle ->
+            for (i: Int in 0 until (genericContentFrame.size)) {
+                if ((genericContentFrame.getChildAt(i) as WebView).title.toString() == tabTitle) {
+                    genericContentFrame[i].bringToFront()
+                }
+            }
         }
         dialog.onTabDeleteClicked = {
             genericContentFrame.removeViewAt(it)
@@ -578,5 +630,4 @@ class HomeFragment : Fragment() {
             }
         }
     }
-
 }

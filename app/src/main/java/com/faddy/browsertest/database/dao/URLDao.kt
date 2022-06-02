@@ -30,6 +30,9 @@ interface URLDao {
     suspend fun getTop9MostVisitedSites(): List<URLData>
 
     @Query("UPDATE url_table SET favIconBlob =:image WHERE generatedURL = :theURL")
-    suspend fun setFavionToDB(image: ByteArray, theURL: String)
+    suspend fun setFavionToDB(image: ByteArray, theURL: String): Int
+
+    @Query("UPDATE url_table SET title =:title WHERE generatedURL = :theURL")
+    suspend fun setTitleOfUrl(title: String, theURL: String): Int
 
 }

@@ -18,7 +18,7 @@ class OpenedTabsBottomSheet : BottomSheetDialogFragment() {
     private lateinit var theAdapter: OpenedTabsAdapter
     var onNewTabClicked: ((isAgreed: Boolean) -> Unit)? = null
     var onTabDeleteClicked: ((isAgreed: Int) -> Unit)? = null
-    var onTabSelected: ((isAgreed: Int) -> Unit)? = null
+    var onTabSelected: ((isAgreed: Int, theTabTitle: String) -> Unit)? = null
     var isDismissed: ((dismissed: Boolean) -> Unit)? = null
     var passedDatalist = arrayListOf<String>()
 
@@ -80,8 +80,8 @@ class OpenedTabsBottomSheet : BottomSheetDialogFragment() {
             onNewTabClicked?.invoke(true)
             dismiss()
         }
-        theAdapter.onTabSelect = { index ->
-            onTabSelected?.invoke(index)
+        theAdapter.onTabSelect = { index, tabTitle ->
+            onTabSelected?.invoke(index, tabTitle)
         }
         theAdapter.closeTab = { index ->
             onTabDeleteClicked?.invoke(index)

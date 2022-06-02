@@ -12,7 +12,11 @@ import java.net.InetSocketAddress
 import java.net.Proxy
 import java.net.URL
 
+
 class GenericWebViewClient : WebViewClient() {
+    var onTitleRecieved: ((title: String) -> Unit)? = null
+    var refreshUrlTitle: ((title: String) -> Unit)? = null
+
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     override fun shouldOverrideUrlLoading(
         view: WebView?,
@@ -98,6 +102,7 @@ class GenericWebViewClient : WebViewClient() {
     }
 
     override fun onPageFinished(view: WebView, url: String) {
+        onTitleRecieved?.invoke(view.title ?: "")
         super.onPageFinished(view, url)
     }
 
@@ -117,5 +122,10 @@ class GenericWebViewClient : WebViewClient() {
         super.onReceivedSslError(view, handler, error)
         handler?.proceed()
 
+    }
+
+    override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
+        refreshUrlTitle?.invoke(url ?: "")
+        super.doUpdateVisitedHistory(view, url, isReload)
     }
 }
