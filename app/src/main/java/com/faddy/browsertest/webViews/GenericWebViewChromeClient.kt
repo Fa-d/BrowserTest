@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 class GenericWebViewChromeClient() : WebChromeClient() {
     var onFavIconRecieved: ((icon: Bitmap?) -> Unit)? = null
     val progresse = MutableLiveData<Int>(0)
+
     override fun onProgressChanged(view: WebView?, newProgress: Int) {
         progresse.value = newProgress
         super.onProgressChanged(view, newProgress)
@@ -22,11 +23,6 @@ class GenericWebViewChromeClient() : WebChromeClient() {
 
     override fun onReceivedIcon(view: WebView, icon: Bitmap?) {
         onFavIconRecieved?.invoke(icon)
-        Log.d("THeDebugggingIcon 1", "$icon")
         super.onReceivedIcon(view, icon)
-      //  viewModel.setFavionToDB(imageToBitmap(icon), view.url ?: "")
-        /*CoroutineScope(Dispatchers.IO).launch {
-            viewModel.setFavionToDB(imageToBitmap(icon), view.url ?: "")
-        }*/
     }
 }

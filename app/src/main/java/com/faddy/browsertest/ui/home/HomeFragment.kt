@@ -21,14 +21,19 @@ import androidx.core.view.size
 import androidx.core.view.updateLayoutParams
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.faddy.browsertest.R
 import com.faddy.browsertest.databinding.FragmentHomeBinding
 import com.faddy.browsertest.models.MostVisitedSitesModel
+import com.faddy.browsertest.models.NewTabsModel
 import com.faddy.browsertest.models.URLData
-import com.faddy.browsertest.ui.history.OpenedTabsBottomSheet
+import com.faddy.browsertest.ui.home.adapters.DialogueOverflowAdapter
+import com.faddy.browsertest.ui.home.adapters.MostVisitedSitesAdapter
+import com.faddy.browsertest.ui.home.adapters.SearchHistoryTextAdapter
+import com.faddy.browsertest.ui.opened_tabs.OpenedTabsBottomSheet
 import com.faddy.browsertest.utils.*
 import com.faddy.browsertest.webViews.GenericWebView
 import com.faddy.browsertest.webViews.GenericWebViewChromeClient
@@ -41,46 +46,16 @@ import java.util.regex.Pattern
 
 @AndroidEntryPoint
 class HomeFragment : Fragment() {
-    private val viewModel: HomeViewModel by viewModels()
+    private val viewModel: HomeViewModel by activityViewModels()
     private lateinit var binding: FragmentHomeBinding
     private lateinit var genericContentFrame: FrameLayout
     private lateinit var genericWebView: WebView
     private var mostVisitedSitesAdapter = MostVisitedSitesAdapter()
-    private var historyTextAdapter = HistoryTextAdapter()
+    private var searchHistoryTextAdapter = SearchHistoryTextAdapter()
 
     //private var openNewTabTempAdapter = OpenedTabsAdapter()
     private var newTabsTempList = mutableListOf<String>()
-    private var historyTempTextList = listOf<String>(
-        "I want white teeth.",
-        "Having a monkey is illegal.\n",
-        "What a day we're having! her mother sighed.",
-        "RANDOM SENTENCE GENERATOR\n",
-        "Type of Sentence\n",
-        " Sentences   Phrases   Questions\n",
-        "Number of Sentences to generate\n",
-        "Choose Length\n",
-        "Here are 20 random sentences.\n",
-        "Click or tap a sentence to bookmark or save.\n",
-        "I want white teeth.\n",
-        "Having a monkey is illegal.\n",
-        "\"What a day we're having!\" her mother sighed.\n",
-        "A balanced diet is a cookie in each hand.\n",
-        "She’s an excellent photographer.\n",
-        "We have group fitness classes.\n",
-        "The big ugly tree destroys the beauty of the house.\n",
-        "His looks are always funny.\n",
-        "Tom took a big breath and blew out the candles.\n",
-        "It’s difficult to say, but I think our customers are more satisfied.\n",
-        "We have a big stove which keeps us very toasty.\n",
-        "The pig put his snout through the fence.\n",
-        "When people walk on the bridge, it shakes.\n",
-        "I haven’t heard anything about him since you wrote to me.\n",
-        "Big men are not necessarily strong men.\n",
-        "I am so thankful for this opportunity.\n",
-        "Sighing, the professor put on the pirate hat.\n",
-        "Do you think you're a bigger man than him?\n",
-        "What do you call that in English?"
-    )
+    private var searchbarItemDataList = mutableListOf<MostVisitedSitesModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -128,9 +103,11 @@ class HomeFragment : Fragment() {
             val currentSearchString = binding.searchET.text.toString().trim()
             binding.searchSuggestionRecycler.visibility =
                 if (currentSearchString == "") View.GONE else View.VISIBLE
-            val theFilteredResult =
-                historyTempTextList.filter { listText -> listText.contains(currentSearchString) }
-            historyTextAdapter.initLoad(theFilteredResult)
+            val theFilteredResult = mutableListOf<MostVisitedSitesModel>()
+            searchbarItemDataList.forEach { data ->
+                if (data.title.contains(currentSearchString)) theFilteredResult.add(data)
+            }
+            searchHistoryTextAdapter.initLoad(theFilteredResult)
         }
     }
 
@@ -212,7 +189,6 @@ class HomeFragment : Fragment() {
             return@OnKeyListener false
         })
 
-
         binding.cancelSearchButton.setOnClickListener {
             hideKeyboardAndUnfocus()
             binding.frequentlyVisitedRecyclerView.visibility = View.VISIBLE
@@ -253,9 +229,24 @@ class HomeFragment : Fragment() {
             false
         }
 
-        binding.homeIcon.setOnClickListener {
-            state0()
+        binding.homeIcon.setOnClickListener { state0() }
+        searchHistoryTextAdapter.onItemClick = { theFetchedUrl ->
+            loadUrlOnClick(theFetchedUrl)
         }
+        mostVisitedSitesAdapter.onItemClick = { theFetchedUrl ->
+            visibilityUnitController(true)
+            loadUrlOnClick(theFetchedUrl)
+        }
+    }
+
+    private fun loadUrlOnClick(theFetchedUrl: String) {
+        genericWebView.loadUrl(theFetchedUrl)
+        hideKeyboardAndUnfocus()
+        binding.searchET.setText(theFetchedUrl)
+        binding.frequentlyVisitedRecyclerView.visibility = View.GONE
+        binding.searchSuggestionRecycler.visibility = View.GONE
+        binding.cancelSearchButton.visibility = View.VISIBLE
+        binding.theMainFrameLayout.visibility = View.VISIBLE
     }
 
     /**
@@ -269,6 +260,11 @@ class HomeFragment : Fragment() {
         hideKeyboard()
     }
 
+    private fun showKeyboardAndFocus() {
+        binding.searchET.setText("")
+        binding.searchET.requestFocus()
+    }
+
 
     private fun state0() {
         //todo
@@ -279,7 +275,7 @@ class HomeFragment : Fragment() {
          * update tab count
          * reset webview to gone clear url
          *
-         * */
+         */
         visibilityUnitController(isSearchETSelected = false, isNotHomeButtonPressed = false)
         hideKeyboardAndUnfocus()
     }
@@ -289,15 +285,13 @@ class HomeFragment : Fragment() {
     }
 
     private fun initData() {
-        viewModel.getTop9MostVisitedSites()
+        viewModel.getTitleURLImageFromDB()
             .observe(viewLifecycleOwner, androidx.lifecycle.Observer { datalist ->
-                val tempTitleList = mutableListOf<MostVisitedSitesModel>()
-                for (data in datalist) {
-                    tempTitleList.add(MostVisitedSitesModel(data.title, data.favIconBlob!!))
-                    Log.d("listTeg", "${data.title}")
-                }
-                mostVisitedSitesAdapter.initLoad(tempTitleList)
+                mostVisitedSitesAdapter.initLoad(datalist)
             })
+        viewModel.getTitleURLImageFromDB().observe(viewLifecycleOwner, androidx.lifecycle.Observer {
+            searchbarItemDataList.addAll(it)
+        })
     }
 
     fun webViewInitializer() {
@@ -427,12 +421,11 @@ class HomeFragment : Fragment() {
         })
         genericWebView.webChromeClient = chromeClientInstance
         chromeClientInstance.onFavIconRecieved = { icon ->
-            Log.d("THeDebugggingIcon 22", "$icon")
             if (icon == null) {
                 Toast.makeText(requireContext(), "Icon Null", Toast.LENGTH_SHORT)
                     .show()
             } else {
-                viewModel.setFavionToDB(imageToBitmap(icon), genericWebView.url!!)
+                viewModel.setFavionToDB(imageToBitmap(icon), genericWebView.url ?: "")
                     .observe(viewLifecycleOwner, androidx.lifecycle.Observer {
                         if (it) {
                             Toast.makeText(
@@ -480,7 +473,7 @@ class HomeFragment : Fragment() {
         with(binding.searchSuggestionRecycler) {
             setHasFixedSize(true)
             layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
-            adapter = historyTextAdapter
+            adapter = searchHistoryTextAdapter
         }
         binding.tabcountButton.setOnClickListener {
             showPickupBottomSheet()
@@ -500,7 +493,6 @@ class HomeFragment : Fragment() {
             WebView.HitTestResult.SRC_ANCHOR_TYPE -> {
                 val handler = Handler()
                 val message = handler.obtainMessage()
-
                 genericWebView.requestFocusNodeHref(message)
                 val url = message.data.getString("url")
                 showETCPopUp(requireContext().applicationContext, url)
@@ -601,17 +593,31 @@ class HomeFragment : Fragment() {
         if (genericContentFrame.childCount > 0) {
             newTabsTempList.clear()
         }
+        viewModel.savedTabsInfo.clear()
+        val newTempLis = mutableListOf<NewTabsModel>()
         for (i: Int in 0 until (genericContentFrame.size)) {
-            newTabsTempList.add((genericContentFrame.getChildAt(i) as WebView).title.toString())
+            // newTabsTempList.add((genericContentFrame.getChildAt(i) as WebView).title.toString())
+            newTempLis.add(
+                NewTabsModel(
+                    (genericContentFrame.getChildAt(i) as WebView).title.toString(),
+                   // (genericContentFrame.getChildAt(i) as WebView)
+                )
+            )
         }
+
+        viewModel.savedTabsInfo.addAll(newTempLis)
         val tag: String = OpenedTabsBottomSheet.tag
         val dialog: OpenedTabsBottomSheet =
-            OpenedTabsBottomSheet.newInstance(bundleOf("newList" to newTabsTempList as ArrayList<String>))
+            OpenedTabsBottomSheet.newInstance(
+                bundleOf()
+                //   bundleOf("newList" to newTabsTempList as ArrayList<String>)
+            )
         dialog.show(childFragmentManager, tag)
 
         dialog.onNewTabClicked = {
             if (it) {
                 webViewInitializer()
+                showKeyboardAndFocus()
             }
         }
         dialog.onTabSelected = { _, tabTitle ->

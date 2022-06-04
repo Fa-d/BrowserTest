@@ -4,6 +4,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.faddy.browsertest.models.MostVisitedSitesModel
+import com.faddy.browsertest.models.NewTabsModel
 import com.faddy.browsertest.models.URLData
 import com.faddy.browsertest.repository.AppRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,6 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject
 constructor(private val repository: AppRepository) : ViewModel() {
+
+    val savedTabsInfo: MutableList<NewTabsModel> = mutableListOf<NewTabsModel>()
 
     fun deleteAllAppData(): LiveData<Boolean> {
         val responseBody = MutableLiveData<Boolean>(false)
@@ -42,7 +46,7 @@ constructor(private val repository: AppRepository) : ViewModel() {
     fun getHitCountSingleSite(theUrl: String): LiveData<Int> {
         val responseBody = MutableLiveData<Int>(0)
         viewModelScope.launch(Dispatchers.IO) {
-            val response = repository.getHitCountSingleSite(theUrl)
+            val response = repository.getHitCountSingleSite(theUrl) ?: 0
             withContext(Dispatchers.Main) {
                 responseBody.value = response
             }
@@ -111,6 +115,28 @@ constructor(private val repository: AppRepository) : ViewModel() {
             val response = repository.setTitleOfUrl(title, theURL)
             withContext(Dispatchers.Main) {
                 responseBody.value = response == 1
+            }
+        }
+        return responseBody
+    }
+
+    fun getAllTitleOfDB(): LiveData<List<String>> {
+        val responseBody = MutableLiveData<List<String>>()
+        viewModelScope.launch(Dispatchers.IO) {
+            val response = repository.getAllTitleOfDB()
+            withContext(Dispatchers.Main) {
+                responseBody.value = response
+            }
+        }
+        return responseBody
+    }
+
+    fun getTitleURLImageFromDB(): LiveData<List<MostVisitedSitesModel>> {
+        val responseBody = MutableLiveData<List<MostVisitedSitesModel>>()
+        viewModelScope.launch(Dispatchers.IO) {
+            val response = repository.getTitleURLImageFromDB()
+            withContext(Dispatchers.Main) {
+                responseBody.value = response
             }
         }
         return responseBody

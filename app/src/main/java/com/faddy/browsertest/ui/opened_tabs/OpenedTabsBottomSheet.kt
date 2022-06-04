@@ -1,30 +1,39 @@
-package com.faddy.browsertest.ui.history
+package com.faddy.browsertest.ui.opened_tabs
 
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.faddy.browsertest.R
 import com.faddy.browsertest.databinding.FragmentOpenedTabsBottomsheetBinding
+import com.faddy.browsertest.models.NewTabsModel
+import com.faddy.browsertest.ui.home.HomeViewModel
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import dagger.hilt.android.AndroidEntryPoint
 import kotlin.concurrent.thread
 
+@AndroidEntryPoint
 class OpenedTabsBottomSheet : BottomSheetDialogFragment() {
+
+    private val viewModel: HomeViewModel by activityViewModels()
     private lateinit var binding: FragmentOpenedTabsBottomsheetBinding
     private lateinit var theAdapter: OpenedTabsAdapter
     var onNewTabClicked: ((isAgreed: Boolean) -> Unit)? = null
     var onTabDeleteClicked: ((isAgreed: Int) -> Unit)? = null
     var onTabSelected: ((isAgreed: Int, theTabTitle: String) -> Unit)? = null
     var isDismissed: ((dismissed: Boolean) -> Unit)? = null
-    var passedDatalist = arrayListOf<String>()
+
 
     companion object {
         fun newInstance(bundle: Bundle?): OpenedTabsBottomSheet = OpenedTabsBottomSheet().apply {
-            passedDatalist = bundle?.getStringArrayList("newList") ?: arrayListOf()
+         //   passedDatalist = bundle?.getStringArrayList("newList") ?: arrayListOf()
         }
 
         val tag: String = OpenedTabsBottomSheet::class.java.name
@@ -59,9 +68,12 @@ class OpenedTabsBottomSheet : BottomSheetDialogFragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View = FragmentOpenedTabsBottomsheetBinding.inflate(inflater, container, false).also {
-        binding = it
-    }.root
+    ): View {
+        ViewModelProvider(this)[HomeViewModel::class.java]
+        return FragmentOpenedTabsBottomsheetBinding.inflate(inflater, container, false).also {
+            binding = it
+        }.root
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -72,7 +84,7 @@ class OpenedTabsBottomSheet : BottomSheetDialogFragment() {
 
     private fun initData() {
         theAdapter = OpenedTabsAdapter()
-        theAdapter.initLoad(passedDatalist)
+        theAdapter.initLoad(viewModel.savedTabsInfo)
     }
 
     private fun initClick() {

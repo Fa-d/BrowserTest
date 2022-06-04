@@ -1,17 +1,17 @@
-package com.faddy.browsertest.ui.home
+package com.faddy.browsertest.ui.home.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.faddy.browsertest.databinding.ItemViewHistoryRecyclerTextBinding
+import com.faddy.browsertest.databinding.ItemViewDialogueOverflowBinding
 
-class HistoryTextAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class DialogueOverflowAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val dataList: MutableList<String> = mutableListOf()
     var onItemClick: (() -> Unit)? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        val binding: ItemViewHistoryRecyclerTextBinding = ItemViewHistoryRecyclerTextBinding.inflate(
+        val binding: ItemViewDialogueOverflowBinding = ItemViewDialogueOverflowBinding.inflate(
             LayoutInflater.from(parent.context), parent, false
         )
         return ViewModel(binding)
@@ -23,11 +23,11 @@ class HistoryTextAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         if (holder is ViewModel) {
             val model = dataList[position]
             val binding = holder.binding
-            binding.theInnerHistoryText.text = model
+            binding.theRecyclerText.text = model
         }
     }
 
-    internal inner class ViewModel(val binding: ItemViewHistoryRecyclerTextBinding) :
+    internal inner class ViewModel(val binding: ItemViewDialogueOverflowBinding) :
         RecyclerView.ViewHolder(binding.root) {
         init {
             binding.root.setOnClickListener {
@@ -42,12 +42,5 @@ class HistoryTextAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         dataList.clear()
         dataList.addAll(list)
         notifyDataSetChanged()
-    }
-
-    fun pagingLoad(list: List<String>) {
-        val currentIndex = dataList.size
-        val newDataCount = list.size
-        dataList.addAll(list)
-        notifyItemRangeInserted(currentIndex, newDataCount)
     }
 }

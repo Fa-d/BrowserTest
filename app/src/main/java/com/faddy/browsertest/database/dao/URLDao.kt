@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.faddy.browsertest.models.MostVisitedSitesModel
 import com.faddy.browsertest.models.URLData
 
 @Dao
@@ -34,5 +35,11 @@ interface URLDao {
 
     @Query("UPDATE url_table SET title =:title WHERE generatedURL = :theURL")
     suspend fun setTitleOfUrl(title: String, theURL: String): Int
+
+    @Query("SELECT title from url_table LIMIT 100")
+    suspend fun getAllTitleOfDB(): List<String>
+
+    @Query("SELECT title,generatedURL, favIconBlob from url_table LIMIT 100")
+    suspend fun getTitleURLImageFromDB(): List<MostVisitedSitesModel>
 
 }

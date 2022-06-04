@@ -1,17 +1,18 @@
-package com.faddy.browsertest.ui.home
+package com.faddy.browsertest.ui.home.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.faddy.browsertest.databinding.ItemViewDialogueOverflowBinding
+import com.faddy.browsertest.databinding.ItemViewHistoryRecyclerTextBinding
+import com.faddy.browsertest.models.MostVisitedSitesModel
 
-class DialogueOverflowAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class SearchHistoryTextAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    private val dataList: MutableList<String> = mutableListOf()
-    var onItemClick: (() -> Unit)? = null
+    private val dataList: MutableList<MostVisitedSitesModel> = mutableListOf()
+    var onItemClick: ((theFetchedUrl: String) -> Unit)? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        val binding: ItemViewDialogueOverflowBinding = ItemViewDialogueOverflowBinding.inflate(
+        val binding: ItemViewHistoryRecyclerTextBinding = ItemViewHistoryRecyclerTextBinding.inflate(
             LayoutInflater.from(parent.context), parent, false
         )
         return ViewModel(binding)
@@ -23,24 +24,26 @@ class DialogueOverflowAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() 
         if (holder is ViewModel) {
             val model = dataList[position]
             val binding = holder.binding
-            binding.theRecyclerText.text = model
+            binding.theInnerHistoryText.text = model.title
+            binding.startImage.setImageBitmap(com.faddy.browsertest.utils.getBitmap(model.favIconBlob))
         }
     }
 
-    internal inner class ViewModel(val binding: ItemViewDialogueOverflowBinding) :
+    internal inner class ViewModel(val binding: ItemViewHistoryRecyclerTextBinding) :
         RecyclerView.ViewHolder(binding.root) {
         init {
             binding.root.setOnClickListener {
                 if (adapterPosition != RecyclerView.NO_POSITION) {
-                    onItemClick?.invoke()
+                    onItemClick?.invoke(dataList[adapterPosition].generatedURL)
                 }
             }
         }
     }
 
-    fun initLoad(list: List<String>) {
+    fun initLoad(list: List<MostVisitedSitesModel>) {
         dataList.clear()
         dataList.addAll(list)
         notifyDataSetChanged()
     }
+
 }

@@ -1,13 +1,14 @@
-package com.faddy.browsertest.ui.history
+package com.faddy.browsertest.ui.opened_tabs
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.faddy.browsertest.databinding.ItemViewOpenedTabBinding
+import com.faddy.browsertest.models.NewTabsModel
 
 class OpenedTabsAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    private val dataList: MutableList<String> = mutableListOf()
+    private val dataList: MutableList<NewTabsModel> = mutableListOf()
     var closeTab: ((index: Int) -> Unit)? = null
     var onTabSelect: ((index: Int, theTabTitle: String) -> Unit)? = null
 
@@ -24,7 +25,13 @@ class OpenedTabsAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         if (holder is ViewHolder) {
             val model = dataList[position]
             val binding = holder.binding
-            binding.urlText.text = model
+            binding.urlText.text = model.theTitle
+            /*binding.fittingView.apply {
+                if (model.theView != null) {
+                    this.removeAllViews()
+                    this.addView(model.theView)
+                }
+            }*/
         }
     }
 
@@ -46,7 +53,7 @@ class OpenedTabsAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         }
     }
 
-    fun initLoad(list: List<String>) {
+    fun initLoad(list: List<NewTabsModel>) {
         dataList.clear()
         dataList.addAll(list)
         notifyDataSetChanged()

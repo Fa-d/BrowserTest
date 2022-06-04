@@ -22,4 +22,8 @@ class AppRepository @Inject constructor(private val urlDao: URLDao) {
     suspend fun setTitleOfUrl(title: String, theURL: String) =
         urlDao.setTitleOfUrl(title, theURL)
 
+    suspend fun getAllTitleOfDB() = urlDao.getAllTitleOfDB()
+
+    suspend fun getTitleURLImageFromDB() = urlDao.getTitleURLImageFromDB()
+
 }

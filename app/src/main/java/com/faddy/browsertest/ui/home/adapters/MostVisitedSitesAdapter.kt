@@ -1,11 +1,9 @@
-package com.faddy.browsertest.ui.home
+package com.faddy.browsertest.ui.home.adapters
 
 import android.os.Build
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
-import androidx.core.graphics.drawable.toDrawable
-import androidx.core.graphics.drawable.toIcon
 import androidx.recyclerview.widget.RecyclerView
 import com.faddy.browsertest.databinding.ItemViewHistoryRecyclerBinding
 import com.faddy.browsertest.models.MostVisitedSitesModel
@@ -14,7 +12,7 @@ import com.faddy.browsertest.utils.getBitmap
 class MostVisitedSitesAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val dataList: MutableList<MostVisitedSitesModel> = mutableListOf()
-    var onItemClick: (() -> Unit)? = null
+    var onItemClick: ((theUrl: String) -> Unit)? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val binding: ItemViewHistoryRecyclerBinding = ItemViewHistoryRecyclerBinding.inflate(
@@ -30,7 +28,7 @@ class MostVisitedSitesAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() 
         if (holder is ViewHolder) {
             val model = dataList[position]
             val binding = holder.binding
-            binding.nameOfWebsite.text = model.siteName
+            binding.nameOfWebsite.text = model.title
             binding.webIcon.setImageBitmap( getBitmap(model.favIconBlob))
         }
     }
@@ -40,7 +38,7 @@ class MostVisitedSitesAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() 
         init {
             binding.root.setOnClickListener {
                 if (adapterPosition != RecyclerView.NO_POSITION) {
-                    onItemClick?.invoke()
+                    onItemClick?.invoke(dataList[adapterPosition].generatedURL)
                 }
             }
         }

@@ -1,14 +1,13 @@
 package com.faddy.browsertest.models
 
 import android.os.Parcelable
-import androidx.room.ColumnInfo
 import kotlinx.android.parcel.Parcelize
 
 
 @Parcelize
 data class MostVisitedSitesModel(
-    var siteName: String = "",
-    @ColumnInfo(name = "favIconBlob")
+    var title: String = "",
+    var generatedURL :String = "",
     var favIconBlob: ByteArray = ByteArray(0)
 
 ): Parcelable {
@@ -18,14 +17,14 @@ data class MostVisitedSitesModel(
 
         other as MostVisitedSitesModel
 
-        if (siteName != other.siteName) return false
+        if (title != other.title) return false
         if (!favIconBlob.contentEquals(other.favIconBlob)) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = siteName.hashCode()
+        var result = title.hashCode()
         result = 31 * result + favIconBlob.contentHashCode()
         return result
     }
