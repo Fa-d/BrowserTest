@@ -163,8 +163,8 @@
         tools:listitem="@layout/item_view_history_recycler"
         tools:visibility="gone" />
 
-    <FrameLayout
-        android:id="@+id/theMainFrameLayout"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:visibility="gone"
@@ -172,7 +172,14 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/searchProgress"
-        tools:visibility="gone" />
+        tools:visibility="gone">
+
+        <FrameLayout
+            android:id="@+id/theMainFrameLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/searchSuggestionRecycler"

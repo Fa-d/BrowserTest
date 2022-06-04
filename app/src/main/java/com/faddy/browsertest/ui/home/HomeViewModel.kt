@@ -1,5 +1,7 @@
 package com.faddy.browsertest.ui.home
 
+import android.webkit.WebView
+import android.widget.FrameLayout
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -8,6 +10,8 @@ import com.faddy.browsertest.models.MostVisitedSitesModel
 import com.faddy.browsertest.models.NewTabsModel
 import com.faddy.browsertest.models.URLData
 import com.faddy.browsertest.repository.AppRepository
+import com.faddy.browsertest.ui.home.adapters.MostVisitedSitesAdapter
+import com.faddy.browsertest.ui.home.adapters.SearchHistoryTextAdapter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -20,6 +24,12 @@ class HomeViewModel @Inject
 constructor(private val repository: AppRepository) : ViewModel() {
 
     val savedTabsInfo: MutableList<NewTabsModel> = mutableListOf<NewTabsModel>()
+    lateinit var genericContentFrame: FrameLayout
+    lateinit var genericWebView: WebView
+    var mostVisitedSitesAdapter = MostVisitedSitesAdapter()
+    var searchHistoryTextAdapter = SearchHistoryTextAdapter()
+    var newTabsTempList = mutableListOf<String>()
+    var searchbarItemDataList = mutableListOf<MostVisitedSitesModel>()
 
     fun deleteAllAppData(): LiveData<Boolean> {
         val responseBody = MutableLiveData<Boolean>(false)

@@ -9,7 +9,6 @@ import android.view.*
 import android.view.inputmethod.EditorInfo
 import android.webkit.WebSettings
 import android.webkit.WebView
-import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.TextView.OnEditorActionListener
 import android.widget.Toast
@@ -22,7 +21,6 @@ import androidx.core.view.updateLayoutParams
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.faddy.browsertest.R
@@ -31,8 +29,6 @@ import com.faddy.browsertest.models.MostVisitedSitesModel
 import com.faddy.browsertest.models.NewTabsModel
 import com.faddy.browsertest.models.URLData
 import com.faddy.browsertest.ui.home.adapters.DialogueOverflowAdapter
-import com.faddy.browsertest.ui.home.adapters.MostVisitedSitesAdapter
-import com.faddy.browsertest.ui.home.adapters.SearchHistoryTextAdapter
 import com.faddy.browsertest.ui.opened_tabs.OpenedTabsBottomSheet
 import com.faddy.browsertest.utils.*
 import com.faddy.browsertest.webViews.GenericWebView
@@ -48,18 +44,6 @@ import java.util.regex.Pattern
 class HomeFragment : Fragment() {
     private val viewModel: HomeViewModel by activityViewModels()
     private lateinit var binding: FragmentHomeBinding
-    private lateinit var genericContentFrame: FrameLayout
-    private lateinit var genericWebView: WebView
-    private var mostVisitedSitesAdapter = MostVisitedSitesAdapter()
-    private var searchHistoryTextAdapter = SearchHistoryTextAdapter()
-
-    //private var openNewTabTempAdapter = OpenedTabsAdapter()
-    private var newTabsTempList = mutableListOf<String>()
-    private var searchbarItemDataList = mutableListOf<MostVisitedSitesModel>()
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -81,7 +65,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun menuController() {
-        val operatorMenu = MenuOperator(requireContext(), genericWebView)
+        val operatorMenu = MenuOperator(requireContext(), viewModel.genericWebView)
         binding.menuButtonMain.setOnClickListener {
             operatorMenu.showPopUp(binding.menuButtonMain)
         }
@@ -104,10 +88,10 @@ class HomeFragment : Fragment() {
             binding.searchSuggestionRecycler.visibility =
                 if (currentSearchString == "") View.GONE else View.VISIBLE
             val theFilteredResult = mutableListOf<MostVisitedSitesModel>()
-            searchbarItemDataList.forEach { data ->
+            viewModel.searchbarItemDataList.forEach { data ->
                 if (data.title.contains(currentSearchString)) theFilteredResult.add(data)
             }
-            searchHistoryTextAdapter.initLoad(theFilteredResult)
+            viewModel.searchHistoryTextAdapter.initLoad(theFilteredResult)
         }
     }
 
@@ -173,12 +157,12 @@ class HomeFragment : Fragment() {
 
     private fun initClick() {
 
-        genericWebView.setOnKeyListener(View.OnKeyListener { _, keyCode, event ->
+        viewModel.genericWebView.setOnKeyListener(View.OnKeyListener { _, keyCode, event ->
             if (event.action != KeyEvent.ACTION_DOWN) {
                 Toast.makeText(requireContext(), "Here is something 2", Toast.LENGTH_SHORT).show()
             } else if (keyCode == KeyEvent.KEYCODE_BACK) {
-                if (genericWebView.canGoBack()) {
-                    genericWebView.goBack()
+                if (viewModel.genericWebView.canGoBack()) {
+                    viewModel.genericWebView.goBack()
                     return@OnKeyListener true
                 } else {
                     (activity)?.onBackPressed()
@@ -199,25 +183,25 @@ class HomeFragment : Fragment() {
         binding.searchET.setOnEditorActionListener(OnEditorActionListener { v, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_GO) {
                 if (isURL(binding.searchET.text.trim().toString())) {
-                    genericWebView.loadUrl(binding.searchET.text.trim().toString())
+                    viewModel.genericWebView.loadUrl(binding.searchET.text.trim().toString())
                 } else {
-                    genericWebView.loadUrl(
+                    viewModel.genericWebView.loadUrl(
                         "https://www.duckduckgo.com/?q=${
                             binding.searchET.text.trim().toString().replace(" ", "+")
                         }"
                     )
                 }
-                genericContentFrame.visibility = View.VISIBLE
+                viewModel.genericContentFrame.visibility = View.VISIBLE
                 visibilityUnitController(true)
                 hideKeyboardAndUnfocus()
-                binding.searchET.setText(genericWebView.url)
+                binding.searchET.setText(viewModel.genericWebView.url)
                 return@OnEditorActionListener true
             }
             false
         })
-        genericContentFrame.setOnKeyListener { view, key, keyEvent ->
-            if (key == KeyEvent.KEYCODE_BACK && keyEvent.action == MotionEvent.ACTION_UP && genericWebView.canGoBack()) {
-                genericWebView.goBack()
+        viewModel.genericContentFrame.setOnKeyListener { view, key, keyEvent ->
+            if (key == KeyEvent.KEYCODE_BACK && keyEvent.action == MotionEvent.ACTION_UP && viewModel.genericWebView.canGoBack()) {
+                viewModel.genericWebView.goBack()
             }
             if (key == KeyEvent.KEYCODE_MENU) {
                 Toast.makeText(
@@ -230,23 +214,24 @@ class HomeFragment : Fragment() {
         }
 
         binding.homeIcon.setOnClickListener { state0() }
-        searchHistoryTextAdapter.onItemClick = { theFetchedUrl ->
+        viewModel.searchHistoryTextAdapter.onItemClick = { theFetchedUrl ->
             loadUrlOnClick(theFetchedUrl)
         }
-        mostVisitedSitesAdapter.onItemClick = { theFetchedUrl ->
+        viewModel.mostVisitedSitesAdapter.onItemClick = { theFetchedUrl ->
             visibilityUnitController(true)
             loadUrlOnClick(theFetchedUrl)
         }
     }
 
     private fun loadUrlOnClick(theFetchedUrl: String) {
-        genericWebView.loadUrl(theFetchedUrl)
+        viewModel.genericWebView.loadUrl(theFetchedUrl)
         hideKeyboardAndUnfocus()
         binding.searchET.setText(theFetchedUrl)
         binding.frequentlyVisitedRecyclerView.visibility = View.GONE
         binding.searchSuggestionRecycler.visibility = View.GONE
         binding.cancelSearchButton.visibility = View.VISIBLE
         binding.theMainFrameLayout.visibility = View.VISIBLE
+        binding.swipeRefreshLayout.visibility = View.VISIBLE
     }
 
     /**
@@ -287,15 +272,15 @@ class HomeFragment : Fragment() {
     private fun initData() {
         viewModel.getTitleURLImageFromDB()
             .observe(viewLifecycleOwner, androidx.lifecycle.Observer { datalist ->
-                mostVisitedSitesAdapter.initLoad(datalist)
+                viewModel.mostVisitedSitesAdapter.initLoad(datalist)
             })
         viewModel.getTitleURLImageFromDB().observe(viewLifecycleOwner, androidx.lifecycle.Observer {
-            searchbarItemDataList.addAll(it)
+            viewModel.searchbarItemDataList.addAll(it)
         })
     }
 
     fun webViewInitializer() {
-        genericWebView = GenericWebView(requireActivity()).initView()
+        viewModel.genericWebView = GenericWebView(requireActivity()).initView()
         val chromeClientInstance = GenericWebViewChromeClient()
         chromeClientInstance.onFavIconRecieved = { icon ->
             Log.d("THeDebugggingIcon 21", "$icon")
@@ -305,7 +290,7 @@ class HomeFragment : Fragment() {
                 )
                     .show()
             } else {
-                viewModel.setFavionToDB(imageToBitmap(icon), genericWebView.url!!)
+                viewModel.setFavionToDB(imageToBitmap(icon), viewModel.genericWebView.url!!)
                     .observe(viewLifecycleOwner, androidx.lifecycle.Observer {
                         if (it) {
                             Toast.makeText(
@@ -317,14 +302,16 @@ class HomeFragment : Fragment() {
         }
         chromeClientInstance.progresse.observe(viewLifecycleOwner, androidx.lifecycle.Observer {
             binding.searchProgress.visibility =
-                if (it == 0 || it == 100) View.GONE else View.VISIBLE
+                if (it == 0 || it == 100) {
+                    binding.swipeRefreshLayout.isRefreshing = false;View.GONE
+                } else View.VISIBLE
             binding.searchProgress.progress = it
         })
-        genericWebView.webChromeClient = chromeClientInstance
+        viewModel.genericWebView.webChromeClient = chromeClientInstance
         val genericWebViewInstance = GenericWebViewClient()
         genericWebViewInstance.onTitleRecieved = {
             saveInformationsToLocalDB()
-            viewModel.setTitleOfUrl(it, genericWebView.url ?: "")
+            viewModel.setTitleOfUrl(it, viewModel.genericWebView.url ?: "")
                 .observe(viewLifecycleOwner, androidx.lifecycle.Observer { isUpdatedTitle ->
                     if (isUpdatedTitle) Toast.makeText(
                         requireContext(), "title Updated", Toast.LENGTH_SHORT
@@ -334,9 +321,9 @@ class HomeFragment : Fragment() {
         genericWebViewInstance.refreshUrlTitle = { newURL ->
             binding.searchET.setText(newURL)
         }
-        genericWebView.webViewClient = genericWebViewInstance
+        viewModel.genericWebView.webViewClient = genericWebViewInstance
 
-        genericWebView.settings.apply {
+        viewModel.genericWebView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
             allowFileAccess = true
@@ -345,27 +332,27 @@ class HomeFragment : Fragment() {
             displayZoomControls = false
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
         }
-        with(genericWebView) {
+        with(viewModel.genericWebView) {
             setLayerType(View.LAYER_TYPE_HARDWARE, null)
             clearHistory()
             isHorizontalScrollBarEnabled = false
             isVerticalScrollBarEnabled = false
         }
-        genericContentFrame.addView(genericWebView)
+        viewModel.genericContentFrame.addView(viewModel.genericWebView)
     }
 
     private fun saveInformationsToLocalDB() {
-        viewModel.checkIfDataAlreadyExists(genericWebView.url ?: "")
+        viewModel.checkIfDataAlreadyExists(viewModel.genericWebView.url ?: "")
             .observe(viewLifecycleOwner, androidx.lifecycle.Observer { isTrue ->
                 if (isTrue) {
-                    viewModel.getHitCountSingleSite(genericWebView.url ?: "")
+                    viewModel.getHitCountSingleSite(viewModel.genericWebView.url ?: "")
                         .observe(
                             viewLifecycleOwner,
                             androidx.lifecycle.Observer { isFetchedCount ->
                                 if (isFetchedCount > 0) {
                                     viewModel.incrementHitCount(
                                         isFetchedCount + 1,
-                                        genericWebView.url ?: ""
+                                        viewModel.genericWebView.url ?: ""
                                     ).observe(
                                         viewLifecycleOwner,
                                         androidx.lifecycle.Observer {
@@ -379,8 +366,8 @@ class HomeFragment : Fragment() {
                                 } else {
                                     viewModel.insertUrlIntoTable(
                                         URLData(
-                                            generatedURL = genericWebView.url ?: "",
-                                            title = genericWebView.title ?: "",
+                                            generatedURL = viewModel.genericWebView.url ?: "",
+                                            title = viewModel.genericWebView.title ?: "",
                                             hitTimeStamp = Calendar.getInstance().timeInMillis,
                                             hitCount = 1,
                                             favIconBlob = ByteArray(0)
@@ -391,8 +378,8 @@ class HomeFragment : Fragment() {
                 } else {
                     viewModel.insertUrlIntoTable(
                         URLData(
-                            generatedURL = genericWebView.url ?: "",
-                            title = genericWebView.title ?: "",
+                            generatedURL = viewModel.genericWebView.url ?: "",
+                            title = viewModel.genericWebView.title ?: "",
                             hitTimeStamp = Calendar.getInstance().timeInMillis,
                             hitCount = 1,
                             favIconBlob = ByteArray(0)
@@ -406,26 +393,27 @@ class HomeFragment : Fragment() {
 
     private fun initView() {
         binding.tabcountButton.text = 1.toString()
-        genericWebView = GenericWebView(requireActivity()).initView()
+        viewModel.genericWebView = GenericWebView(requireActivity()).initView()
         binding.searchProgress.visibility = View.VISIBLE
-        genericContentFrame = binding.theMainFrameLayout
-        genericContentFrame.addView(genericWebView, 0)
+        viewModel.genericContentFrame = binding.theMainFrameLayout
+        viewModel.genericContentFrame.addView(viewModel.genericWebView, 0)
         val chromeClientInstance = GenericWebViewChromeClient()
         chromeClientInstance.progresse.observe(viewLifecycleOwner, androidx.lifecycle.Observer {
             if (it == 0 || it == 100) {
+                binding.swipeRefreshLayout.isRefreshing = false;
                 binding.searchProgress.visibility = View.GONE
             } else {
                 binding.searchProgress.visibility = View.VISIBLE
             }
             binding.searchProgress.progress = it
         })
-        genericWebView.webChromeClient = chromeClientInstance
+        viewModel.genericWebView.webChromeClient = chromeClientInstance
         chromeClientInstance.onFavIconRecieved = { icon ->
             if (icon == null) {
                 Toast.makeText(requireContext(), "Icon Null", Toast.LENGTH_SHORT)
                     .show()
             } else {
-                viewModel.setFavionToDB(imageToBitmap(icon), genericWebView.url ?: "")
+                viewModel.setFavionToDB(imageToBitmap(icon), viewModel.genericWebView.url ?: "")
                     .observe(viewLifecycleOwner, androidx.lifecycle.Observer {
                         if (it) {
                             Toast.makeText(
@@ -438,7 +426,7 @@ class HomeFragment : Fragment() {
         val genericWebViewInstance = GenericWebViewClient()
         genericWebViewInstance.onTitleRecieved = {
             saveInformationsToLocalDB()
-            viewModel.setTitleOfUrl(it, genericWebView.url ?: "")
+            viewModel.setTitleOfUrl(it, viewModel.genericWebView.url ?: "")
                 .observe(viewLifecycleOwner, androidx.lifecycle.Observer { isUpdatedTItle ->
                     if (isUpdatedTItle) Toast.makeText(
                         requireContext(), "title Updated", Toast.LENGTH_SHORT
@@ -448,9 +436,9 @@ class HomeFragment : Fragment() {
         genericWebViewInstance.refreshUrlTitle = { newURL ->
             binding.searchET.setText(newURL)
         }
-        genericWebView.webViewClient = genericWebViewInstance
+        viewModel.genericWebView.webViewClient = genericWebViewInstance
 
-        genericWebView.settings.apply {
+        viewModel.genericWebView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
             allowFileAccess = true
@@ -459,7 +447,7 @@ class HomeFragment : Fragment() {
             displayZoomControls = false
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
         }
-        with(genericWebView) {
+        with(viewModel.genericWebView) {
             setLayerType(View.LAYER_TYPE_HARDWARE, null)
             clearHistory()
             isHorizontalScrollBarEnabled = false
@@ -468,15 +456,19 @@ class HomeFragment : Fragment() {
         with(binding.frequentlyVisitedRecyclerView) {
             setHasFixedSize(true)
             layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 3)
-            adapter = mostVisitedSitesAdapter
+            adapter = viewModel.mostVisitedSitesAdapter
         }
         with(binding.searchSuggestionRecycler) {
             setHasFixedSize(true)
             layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
-            adapter = searchHistoryTextAdapter
+            adapter = viewModel.searchHistoryTextAdapter
         }
         binding.tabcountButton.setOnClickListener {
             showPickupBottomSheet()
+        }
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            Toast.makeText(requireContext(), "swipeRefreshed", Toast.LENGTH_SHORT).show()
+            viewModel.genericWebView.reload()
         }
     }
 
@@ -485,7 +477,7 @@ class HomeFragment : Fragment() {
         v: View,
         menuInfo: ContextMenu.ContextMenuInfo?
     ) {
-        val hitTestResult: WebView.HitTestResult = genericWebView.hitTestResult
+        val hitTestResult: WebView.HitTestResult = viewModel.genericWebView.hitTestResult
         when (hitTestResult.type) {
             WebView.HitTestResult.ANCHOR_TYPE -> {
                 Toast.makeText(requireContext(), "1", Toast.LENGTH_SHORT).show()
@@ -493,7 +485,7 @@ class HomeFragment : Fragment() {
             WebView.HitTestResult.SRC_ANCHOR_TYPE -> {
                 val handler = Handler()
                 val message = handler.obtainMessage()
-                genericWebView.requestFocusNodeHref(message)
+                viewModel.genericWebView.requestFocusNodeHref(message)
                 val url = message.data.getString("url")
                 showETCPopUp(requireContext().applicationContext, url)
                 Toast.makeText(requireContext(), "2", Toast.LENGTH_SHORT).show()
@@ -511,7 +503,7 @@ class HomeFragment : Fragment() {
 
 
     private fun isWebViewInflated(): Boolean {
-        return genericContentFrame.height > 0
+        return viewModel.genericContentFrame.height > 0
     }
 
     private fun showFrequentlyVisitedAndHideSearchSuggestions(flag: Boolean) {
@@ -520,11 +512,13 @@ class HomeFragment : Fragment() {
             binding.searchSuggestionRecycler.visibility = View.VISIBLE
             binding.cancelSearchButton.visibility = View.VISIBLE
             binding.theMainFrameLayout.visibility = View.VISIBLE
+            binding.swipeRefreshLayout.visibility = View.VISIBLE
         } else {
             binding.frequentlyVisitedRecyclerView.visibility = View.VISIBLE
             binding.searchSuggestionRecycler.visibility = View.GONE
             binding.cancelSearchButton.visibility = View.GONE
             binding.theMainFrameLayout.visibility = View.GONE
+            binding.swipeRefreshLayout.visibility = View.GONE
         }
     }
 
@@ -590,17 +584,17 @@ class HomeFragment : Fragment() {
     }
 
     private fun showPickupBottomSheet() {
-        if (genericContentFrame.childCount > 0) {
-            newTabsTempList.clear()
+        if (viewModel.genericContentFrame.childCount > 0) {
+            viewModel.newTabsTempList.clear()
         }
         viewModel.savedTabsInfo.clear()
         val newTempLis = mutableListOf<NewTabsModel>()
-        for (i: Int in 0 until (genericContentFrame.size)) {
+        for (i: Int in 0 until (viewModel.genericContentFrame.size)) {
             // newTabsTempList.add((genericContentFrame.getChildAt(i) as WebView).title.toString())
             newTempLis.add(
                 NewTabsModel(
-                    (genericContentFrame.getChildAt(i) as WebView).title.toString(),
-                   // (genericContentFrame.getChildAt(i) as WebView)
+                    (viewModel.genericContentFrame.getChildAt(i) as WebView).title.toString(),
+                    // (genericContentFrame.getChildAt(i) as WebView)
                 )
             )
         }
@@ -621,18 +615,18 @@ class HomeFragment : Fragment() {
             }
         }
         dialog.onTabSelected = { _, tabTitle ->
-            for (i: Int in 0 until (genericContentFrame.size)) {
-                if ((genericContentFrame.getChildAt(i) as WebView).title.toString() == tabTitle) {
-                    genericContentFrame[i].bringToFront()
+            for (i: Int in 0 until (viewModel.genericContentFrame.size)) {
+                if ((viewModel.genericContentFrame.getChildAt(i) as WebView).title.toString() == tabTitle) {
+                    viewModel.genericContentFrame[i].bringToFront()
                 }
             }
         }
         dialog.onTabDeleteClicked = {
-            genericContentFrame.removeViewAt(it)
+            viewModel.genericContentFrame.removeViewAt(it)
         }
         dialog.isDismissed = {
             if (it) {
-                binding.tabcountButton.text = genericContentFrame.childCount.toString()
+                binding.tabcountButton.text = viewModel.genericContentFrame.childCount.toString()
             }
         }
     }

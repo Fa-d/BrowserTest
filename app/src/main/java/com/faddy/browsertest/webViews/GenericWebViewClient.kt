@@ -63,9 +63,9 @@ class GenericWebViewClient : WebViewClient() {
             val inputStream: InputStream = BufferedInputStream(connection.inputStream)
             val encoding = connection.contentEncoding
             connection.headerFields
-            val responseHeaders: MutableMap<String, String> = java.util.HashMap()
+            val responseHeaders: HashMap<String, String> = HashMap<String, String>()
             for (key in connection.headerFields.keys) {
-                //responseHeaders[key] = connection.getHeaderField(key)
+                if (key != null) responseHeaders[key] = connection.getHeaderField(key)
             }
 
             var mimeType = "text/plain"

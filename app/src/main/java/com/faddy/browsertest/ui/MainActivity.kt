@@ -3,15 +3,19 @@ package com.faddy.browsertest.ui
 import android.content.*
 import android.os.Bundle
 import android.os.IBinder
+import android.view.KeyEvent
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.faddy.browsertest.R
+import com.faddy.browsertest.ui.home.HomeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import org.torproject.jni.TorService
 
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+    private val viewModel by viewModels<HomeViewModel>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -26,13 +30,21 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    override fun onBackPressed() {
-        if (supportFragmentManager.backStackEntryCount > 0) {
-            supportFragmentManager.popBackStack()
-            //binding
-        } else {
-            super.onBackPressed()
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            when (keyCode) {
+                KeyEvent.KEYCODE_BACK -> {
+                    if (viewModel.genericWebView.canGoBack()) {
+                        viewModel.genericWebView.goBack()
+                    } else {
+                        finish()
+                    }
+                    return true
+                }
+            }
         }
+        return super.onKeyDown(keyCode, event)
     }
 
     private fun initService() {
