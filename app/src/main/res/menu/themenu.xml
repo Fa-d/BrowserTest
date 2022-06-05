@@ -41,20 +41,20 @@
         app:iconTint="@color/black"
         app:showAsAction="always" />
 
-    <item
+    <!-- <item
         android:id="@+id/settingsofMenu"
         android:icon="@drawable/ic_baseline_settings_24"
         android:iconTint="@color/black"
         android:title="Settings"
         app:iconTint="@color/black"
         app:showAsAction="always" />
-    <item
+   <item
         android:id="@+id/helpandfeedabck"
         android:icon="@drawable/ic_baseline_help_outline_24"
         android:iconTint="@color/black"
         android:title="Help and Feedback"
         app:iconTint="@color/black"
-        app:showAsAction="always" />
+        app:showAsAction="always" />-->
 
     <item
         android:id="@+id/exit"

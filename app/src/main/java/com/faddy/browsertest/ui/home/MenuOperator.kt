@@ -14,6 +14,7 @@ class MenuOperator(private val theContext: Context, private val webView: WebView
 
     var closeApp: (() -> Unit)? = null
     var openNewTab: (() -> Unit)? = null
+    var bookmarkCurrnetTab: (() -> Unit)? = null
 
     fun showPopUp(view: View) {
         val popup = PopupMenu(theContext, view)
@@ -30,13 +31,15 @@ class MenuOperator(private val theContext: Context, private val webView: WebView
                 R.id.previousHis -> if (webView.canGoForward()) webView.goForward()
                 R.id.newTab -> openNewTab?.invoke()
                 R.id.exit -> closeApp?.invoke()
-                R.id.bookmark -> {}
-                R.id.helpandfeedabck -> {
+                R.id.bookmark -> {
+                    bookmarkCurrnetTab?.invoke()
+                }
+                /*R.id.helpandfeedabck -> {
                     Toast.makeText(theContext, "helpandfeedabck", Toast.LENGTH_SHORT).show()
                 }
                 R.id.settingsofMenu -> {
                     Toast.makeText(theContext, "settingsofMenu", Toast.LENGTH_SHORT).show()
-                }
+                }*/
             }
             true
         }

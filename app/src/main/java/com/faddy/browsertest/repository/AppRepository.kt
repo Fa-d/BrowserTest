@@ -25,5 +25,6 @@ class AppRepository @Inject constructor(private val urlDao: URLDao) {
     suspend fun getAllTitleOfDB() = urlDao.getAllTitleOfDB()
 
     suspend fun getTitleURLImageFromDB() = urlDao.getTitleURLImageFromDB()
+    suspend fun setCurrnetUrlBookmarkerd(url: String) = urlDao.setCurrnetUrlBookmarkerd(url)
 
 }

@@ -151,4 +151,15 @@ constructor(private val repository: AppRepository) : ViewModel() {
         }
         return responseBody
     }
+
+    fun setCurrnetUrlBookmarkerd(url: String): LiveData<Int> {
+        val responseBody = MutableLiveData<Int>()
+        viewModelScope.launch(Dispatchers.IO) {
+            val response = repository.setCurrnetUrlBookmarkerd(url)
+            withContext(Dispatchers.Main) {
+                responseBody.value = response
+            }
+        }
+        return responseBody
+    }
 }

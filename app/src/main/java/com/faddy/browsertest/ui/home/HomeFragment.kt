@@ -75,6 +75,12 @@ class HomeFragment : Fragment() {
         operatorMenu.openNewTab = {
             showPickupBottomSheet()
         }
+        operatorMenu.bookmarkCurrnetTab = {
+            viewModel.setCurrnetUrlBookmarkerd(viewModel.genericWebView.title ?: "")
+                .observe(viewLifecycleOwner, androidx.lifecycle.Observer {
+
+                })
+        }
     }
 
     private fun initListeners() {

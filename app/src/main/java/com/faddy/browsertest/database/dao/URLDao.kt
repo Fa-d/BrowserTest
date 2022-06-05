@@ -27,6 +27,9 @@ interface URLDao {
     @Query("SELECT COUNT(*) FROM url_table WHERE generatedURL = :url AND isBookmarked == 1")
     suspend fun isCurrentURLBookmarked(url: String): Int
 
+    @Query("UPDATE url_table SET isBookmarked = 1 WHERE generatedURL = :url")
+    suspend fun setCurrnetUrlBookmarkerd(url: String): Int
+
     @Query("SELECT * FROM url_table ORDER BY hitCount DESC LIMIT 10")
     suspend fun getTop9MostVisitedSites(): List<URLData>
 
